@@ -60,7 +60,7 @@ export function EnhancedMainLayout({ sidebar, notesList, noteEditor }: EnhancedM
   }
   
   // 处理拖拽移动
-  const handleDragMove = (event: MouseEvent) => {
+  const handleDragMove = useCallback((event: MouseEvent) => {
     if (!isDragging || !containerRef.current) return
     
     const containerWidth = containerRef.current.clientWidth
@@ -93,16 +93,16 @@ export function EnhancedMainLayout({ sidebar, notesList, noteEditor }: EnhancedM
         }))
       }
     }
-  }
+  }, [isDragging, dragStartX, dragStartSizes.sidebar, dragStartSizes.notesList, panelSizes.sidebar, sidebarCollapsed])
   
   // 处理拖拽结束
-  const handleDragEnd = () => {
+  const handleDragEnd = useCallback(() => {
     setIsDragging(null)
     document.removeEventListener('mousemove', handleDragMove)
     document.removeEventListener('mouseup', handleDragEnd)
     document.body.style.userSelect = ''
     document.body.style.cursor = ''
-  }
+  }, [])
   
   // 清理事件监听器
   useEffect(() => {

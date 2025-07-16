@@ -54,19 +54,6 @@ export function ResizablePanel({
     }
   }, [storageKey])
   
-  // 处理拖拽开始
-  const handleDragStart = useCallback((event: React.MouseEvent) => {
-    event.preventDefault()
-    setIsDragging(true)
-    setDragStartX(event.clientX)
-    setDragStartWidth(width)
-    
-    document.addEventListener('mousemove', handleDragMove)
-    document.addEventListener('mouseup', handleDragEnd)
-    document.body.style.userSelect = 'none'
-    document.body.style.cursor = 'col-resize'
-  }, [width, handleDragMove, handleDragEnd])
-  
   // 处理拖拽移动
   const handleDragMove = useCallback((event: MouseEvent) => {
     if (!isDragging) return
@@ -91,6 +78,19 @@ export function ResizablePanel({
     
     saveWidth(width)
   }, [width, saveWidth, handleDragMove])
+  
+  // 处理拖拽开始
+  const handleDragStart = useCallback((event: React.MouseEvent) => {
+    event.preventDefault()
+    setIsDragging(true)
+    setDragStartX(event.clientX)
+    setDragStartWidth(width)
+    
+    document.addEventListener('mousemove', handleDragMove)
+    document.addEventListener('mouseup', handleDragEnd)
+    document.body.style.userSelect = 'none'
+    document.body.style.cursor = 'col-resize'
+  }, [width, handleDragMove, handleDragEnd])
   
   // 处理双击重置
   const handleDoubleClick = useCallback(() => {
