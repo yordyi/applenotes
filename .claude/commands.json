@@ -1,0 +1,64 @@
+{
+  "commands": {
+    "/apple-component": {
+      "description": "创建一个新的 Apple 风格组件",
+      "template": "templates/component.tsx",
+      "prompts": [
+        {
+          "name": "ComponentName",
+          "message": "输入组件名称 (PascalCase):"
+        }
+      ],
+      "outputPath": "components/{{ComponentName}}.tsx"
+    },
+    "/redux-slice": {
+      "description": "创建一个新的 Redux slice",
+      "template": "templates/slice.ts",
+      "prompts": [
+        {
+          "name": "SliceName",
+          "message": "输入 slice 名称 (PascalCase):"
+        },
+        {
+          "name": "sliceName",
+          "message": "输入 slice 名称 (camelCase):"
+        }
+      ],
+      "outputPath": "store/slices/{{sliceName}}Slice.ts"
+    },
+    "/custom-hook": {
+      "description": "创建一个自定义 React Hook",
+      "template": "templates/hook.ts",
+      "prompts": [
+        {
+          "name": "HookName",
+          "message": "输入 Hook 名称 (不含 'use' 前缀):"
+        }
+      ],
+      "outputPath": "hooks/use{{HookName}}.ts"
+    },
+    "/validate": {
+      "description": "运行完整的代码验证",
+      "execute": ["npm run validate"]
+    },
+    "/format-all": {
+      "description": "格式化所有代码文件",
+      "execute": ["npm run format"]
+    },
+    "/analyze": {
+      "description": "分析代码质量和性能",
+      "execute": [
+        "npm run lint",
+        "npm run typecheck",
+        "npx bundlephobia-cli react redux next"
+      ]
+    }
+  },
+  "aliases": {
+    "/ac": "/apple-component",
+    "/rs": "/redux-slice",
+    "/ch": "/custom-hook",
+    "/v": "/validate",
+    "/f": "/format-all"
+  }
+}

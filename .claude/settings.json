@@ -1,0 +1,95 @@
+{
+  "name": "Apple Notes Clone",
+  "description": "Web-based Apple Notes clone with Next.js and Redux",
+  "version": "1.0.0",
+  "environment": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "preferences": {
+    "language": "typescript",
+    "framework": "nextjs",
+    "stateManagement": "redux-toolkit",
+    "styling": "tailwindcss",
+    "componentPattern": "functional",
+    "codeStyle": {
+      "indentation": 2,
+      "quotes": "single",
+      "semicolons": false,
+      "trailingComma": "es5"
+    }
+  },
+  "tools": {
+    "enabled": [
+      "bash",
+      "read",
+      "write",
+      "edit",
+      "grep",
+      "glob"
+    ],
+    "disabled": [],
+    "restrictions": {
+      "bash": {
+        "allowedCommands": ["npm", "npx", "node", "git", "eslint", "tsc"],
+        "deniedCommands": ["rm -rf", "sudo"]
+      }
+    }
+  },
+  "hooks": {
+    "preCommit": {
+      "enabled": true,
+      "commands": [
+        "npm run lint",
+        "npm run typecheck"
+      ]
+    },
+    "postEdit": {
+      "enabled": true,
+      "commands": [
+        "npx prettier --write ${file}"
+      ]
+    }
+  },
+  "customCommands": {
+    "component": {
+      "description": "Create a new Apple-style component",
+      "template": "templates/component.tsx"
+    },
+    "slice": {
+      "description": "Create a new Redux slice",
+      "template": "templates/slice.ts"
+    },
+    "hook": {
+      "description": "Create a custom React hook",
+      "template": "templates/hook.ts"
+    }
+  },
+  "projectRules": {
+    "fileNaming": {
+      "components": "PascalCase",
+      "hooks": "camelCase",
+      "slices": "camelCase",
+      "utilities": "camelCase"
+    },
+    "folderStructure": {
+      "components": {
+        "path": "components/",
+        "subfolders": ["common", "layout", "features"]
+      },
+      "store": {
+        "path": "store/",
+        "subfolders": ["slices", "selectors", "middleware"]
+      }
+    }
+  },
+  "dependencies": {
+    "autoInstall": false,
+    "checkUpdates": true,
+    "allowedVersions": {
+      "next": "^14.0.0",
+      "@reduxjs/toolkit": "^2.0.0",
+      "react": "^18.0.0"
+    }
+  }
+}
