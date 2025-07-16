@@ -1,0 +1,20 @@
+<!-- .claude/commands/ui-create-apple-component.md -->
+# 创建Apple风格组件
+
+基于Apple Notes设计规范创建React组件：
+
+**设计原则**：
+- 简洁优雅的视觉设计
+- 流畅的动画和过渡效果
+- 响应式布局支持
+- 完整的TypeScript类型支持
+- 与Redux状态管理集成
+
+**组件要求**：
+1. 遵循Apple Human Interface Guidelines
+2. 使用自定义的apple-gray色彩系统
+3. 实现smooth的微交互
+4. 支持暗色模式
+5. 完整的可访问性支持
+
+**文件结构**：
