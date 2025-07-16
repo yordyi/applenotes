@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { useAppSelector, useAppDispatch } from '@/store/hooks'
 import { toggleSidebar } from '@/store/slices/uiSlice'
 import { cn } from '@/lib/utils'
@@ -102,7 +102,7 @@ export function EnhancedMainLayout({ sidebar, notesList, noteEditor }: EnhancedM
     document.removeEventListener('mouseup', handleDragEnd)
     document.body.style.userSelect = ''
     document.body.style.cursor = ''
-  }, [])
+  }, [handleDragMove])
   
   // 清理事件监听器
   useEffect(() => {
