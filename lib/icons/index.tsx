@@ -318,7 +318,7 @@ interface IconProps {
 
 // 创建标准化图标组件
 export const createIcon = (IconComponent: LucideIcon) => {
-  return ({ 
+  const Icon = ({ 
     size = 'md', 
     color = 'inherit', 
     className = '', 
@@ -337,6 +337,10 @@ export const createIcon = (IconComponent: LucideIcon) => {
       />
     )
   }
+  
+  Icon.displayName = `Icon(${IconComponent.displayName || IconComponent.name})`
+  
+  return Icon
 }
 
 // 标准化图标组件
@@ -481,7 +485,7 @@ export const iconGuidelines = {
 }
 
 // 导出所有图标相关内容
-export default {
+const iconExports = {
   Icon,
   iconSizes,
   iconColors,
@@ -490,3 +494,5 @@ export default {
   iconGuidelines,
   createIcon,
 }
+
+export default iconExports

@@ -309,7 +309,7 @@ export const useAnimation = () => {
 }
 
 // 导出所有动画配置
-export default {
+const animationExports = {
   animationConfig,
   animations,
   transitions,
@@ -318,3 +318,5 @@ export default {
   animationUtils,
   useAnimation,
 }
+
+export default animationExports

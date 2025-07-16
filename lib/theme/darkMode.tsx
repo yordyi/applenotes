@@ -411,7 +411,7 @@ export const darkModeUtils = {
 }
 
 // 导出所有暗色模式相关内容
-export default {
+const darkModeExports = {
   darkModeConfig,
   darkModeColors,
   DarkModeManager,
@@ -421,3 +421,5 @@ export default {
   generateCSSVariables,
   darkModeUtils,
 }
+
+export default darkModeExports

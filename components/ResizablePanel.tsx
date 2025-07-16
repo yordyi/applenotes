@@ -65,7 +65,7 @@ export function ResizablePanel({
     document.addEventListener('mouseup', handleDragEnd)
     document.body.style.userSelect = 'none'
     document.body.style.cursor = 'col-resize'
-  }, [width])
+  }, [width, handleDragMove, handleDragEnd])
   
   // 处理拖拽移动
   const handleDragMove = useCallback((event: MouseEvent) => {
@@ -90,7 +90,7 @@ export function ResizablePanel({
     document.body.style.cursor = ''
     
     saveWidth(width)
-  }, [width, saveWidth])
+  }, [width, saveWidth, handleDragMove])
   
   // 处理双击重置
   const handleDoubleClick = useCallback(() => {

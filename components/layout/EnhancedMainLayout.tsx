@@ -110,7 +110,7 @@ export function EnhancedMainLayout({ sidebar, notesList, noteEditor }: EnhancedM
       document.removeEventListener('mousemove', handleDragMove)
       document.removeEventListener('mouseup', handleDragEnd)
     }
-  }, [])
+  }, [handleDragMove, handleDragEnd])
   
   // 响应式处理
   const [isMobile, setIsMobile] = useState(false)
