@@ -30,6 +30,8 @@ export function Sidebar() {
           <PanelLeftOpen className="w-4 h-4 text-apple-gray-600 dark:text-apple-gray-400" />
         ) : (
           <PanelLeftClose className="w-4 h-4 text-apple-gray-600 dark:text-apple-gray-400" />
+        ) : (
+          <PanelLeftClose className="w-4 h-4 text-apple-gray-600 dark:text-apple-gray-400" />
         )}
       </button>
 
