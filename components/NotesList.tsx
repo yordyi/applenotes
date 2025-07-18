@@ -98,7 +98,7 @@ export function NotesList() {
       dayAgo.setDate(dayAgo.getDate() - 1)
       filtered = filtered.filter(note => new Date(note.updatedAt) > dayAgo)
     } else if (selectedFolderId === 'starred') {
-      filtered = []
+      filtered = filtered.filter(note => note.isFavorited)
     } else if (selectedFolderId === 'tagged') {
       filtered = filtered.filter(note => note.tags && note.tags.length > 0)
     } else if (selectedFolderId === 'archive') {

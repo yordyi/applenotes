@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useAppSelector, useAppDispatch } from '@/store/hooks'
-import { updateNote, deleteNote, togglePinNote } from '@/store/slices/notesSlice'
+import { updateNote, deleteNote, togglePinNote, toggleFavoriteNote } from '@/store/slices/notesSlice'
 import { format } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
 import { cn } from '@/lib/utils'
@@ -24,7 +24,8 @@ import {
   AlignRight,
   Search,
   RotateCcw,
-  RotateCw
+  RotateCw,
+  Star
 } from 'lucide-react'
 
 export default function BasicNoteEditor() {
@@ -89,6 +90,13 @@ export default function BasicNoteEditor() {
   const handlePin = () => {
     if (selectedNote) {
       dispatch(togglePinNote(selectedNote.id))
+    }
+  }
+
+  // 处理收藏
+  const handleFavorite = () => {
+    if (selectedNote) {
+      dispatch(toggleFavoriteNote(selectedNote.id))
     }
   }
   
@@ -215,6 +223,19 @@ export default function BasicNoteEditor() {
             title={selectedNote.isPinned ? '取消置顶' : '置顶'}
           >
             <Pin className="w-4 h-4" />
+          </button>
+
+          {/* 收藏按钮 */}
+          <button
+            onClick={handleFavorite}
+            className={cn(
+              'p-2 rounded-apple-sm hover:bg-apple-gray-100 dark:hover:bg-apple-gray-800',
+              'transition-colors duration-apple-fast',
+              selectedNote.isFavorited ? 'text-purple-500' : 'text-apple-gray-500 dark:text-apple-gray-400'
+            )}
+            title={selectedNote.isFavorited ? '取消收藏' : '收藏'}
+          >
+            <Star className={cn('w-4 h-4', selectedNote.isFavorited && 'fill-current')} />
           </button>
           
           {/* 分享按钮 */}
