@@ -1,5 +1,6 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit'
+import { createSlice, PayloadAction, createSelector } from '@reduxjs/toolkit'
 import { initialNotes } from '../initialData'
+import type { RootState } from '../store'
 
 export interface Note {
   id: string
@@ -9,6 +10,7 @@ export interface Note {
   createdAt: string
   updatedAt: string
   isPinned: boolean
+  isFavorited?: boolean
   tags: string[]
 }
 
@@ -64,10 +66,44 @@ const notesSlice = createSlice({
       const note = state.notes.find(n => n.id === action.payload)
       if (note) {
         note.isPinned = !note.isPinned
+        note.updatedAt = new Date().toISOString()
+      }
+    },
+    toggleFavoriteNote: (state, action: PayloadAction<string>) => {
+      const note = state.notes.find(n => n.id === action.payload)
+      if (note) {
+        note.isFavorited = !note.isFavorited
+        note.updatedAt = new Date().toISOString()
       }
     },
   },
 })
 
-export const { addNote, updateNote, deleteNote, selectNote, setSearchQuery, togglePinNote } = notesSlice.actions
+export const { addNote, updateNote, deleteNote, selectNote, setSearchQuery, togglePinNote, toggleFavoriteNote } = notesSlice.actions
+
+// 选择器：计算每个文件夹的笔记数量（包括子文件夹）
+export const selectFolderNoteCounts = createSelector(
+  [(state: RootState) => state.notes.notes, (state: RootState) => state.folders.folders],
+  (notes, folders) => {
+    const countMap = new Map<string, number>()
+    
+    // 获取文件夹及其所有子文件夹的 ID
+    const getDescendantFolderIds = (folderId: string): string[] => {
+      const childFolders = folders.filter(f => f.parentId === folderId)
+      return [folderId, ...childFolders.flatMap(f => getDescendantFolderIds(f.id))]
+    }
+    
+    // 为每个文件夹计算笔记数量
+    folders.forEach(folder => {
+      const descendantIds = getDescendantFolderIds(folder.id)
+      const count = notes.filter(note => 
+        note.folderId && descendantIds.includes(note.folderId)
+      ).length
+      countMap.set(folder.id, count)
+    })
+    
+    return countMap
+  }
+)
+
 export default notesSlice.reducer

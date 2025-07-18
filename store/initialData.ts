@@ -29,6 +29,7 @@ export const initialNotes: Note[] = [
     createdAt: new Date(Date.now() - 86400000).toISOString(),
     updatedAt: new Date(Date.now() - 86400000).toISOString(),
     isPinned: true,
+    isFavorited: false,
     tags: ['购物', '生活'],
   },
   {
@@ -39,6 +40,7 @@ export const initialNotes: Note[] = [
     createdAt: new Date(Date.now() - 172800000).toISOString(),
     updatedAt: new Date(Date.now() - 172800000).toISOString(),
     isPinned: false,
+    isFavorited: false,
     tags: ['工作', '计划'],
   },
   {
@@ -49,6 +51,7 @@ export const initialNotes: Note[] = [
     createdAt: new Date(Date.now() - 259200000).toISOString(),
     updatedAt: new Date(Date.now() - 259200000).toISOString(),
     isPinned: false,
+    isFavorited: false,
     tags: ['会议', '工作'],
   },
 ]

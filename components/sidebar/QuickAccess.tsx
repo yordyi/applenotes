@@ -75,6 +75,7 @@ export function QuickAccess({ isCollapsed }: QuickAccessProps) {
     dayAgo.setDate(dayAgo.getDate() - 1)
     return new Date(n.updatedAt) > dayAgo
   }).length
+  const favoritedCount = notes.filter(n => n.isFavorited).length
   const taggedCount = notes.filter(n => n.tags && n.tags.length > 0).length
 
   const quickAccessItems = [
@@ -103,7 +104,7 @@ export function QuickAccess({ isCollapsed }: QuickAccessProps) {
       id: 'starred',
       icon: <Star className="w-4 h-4" />,
       label: '收藏',
-      count: 0, // TODO: 实现收藏功能
+      count: favoritedCount,
       color: 'text-purple-500'
     },
     {

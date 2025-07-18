@@ -1,10 +1,10 @@
 'use client'
 
 import { useAppSelector, useAppDispatch } from '@/store/hooks'
-import { updateNote, deleteNote, togglePinNote } from '@/store/slices/notesSlice'
+import { updateNote, deleteNote, togglePinNote, toggleFavoriteNote } from '@/store/slices/notesSlice'
 import { format } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
-import { Pin, Trash2, Share, MoreHorizontal, Save, Clock } from 'lucide-react'
+import { Pin, Trash2, Share, MoreHorizontal, Save, Clock, Star } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { cn } from '@/lib/utils'
 import { RichTextEditor, editorUtils } from './editor/RichTextEditor'
@@ -53,6 +53,12 @@ export function NoteEditor() {
   const handlePin = () => {
     if (selectedNote) {
       dispatch(togglePinNote(selectedNote.id))
+    }
+  }
+
+  const handleFavorite = () => {
+    if (selectedNote) {
+      dispatch(toggleFavoriteNote(selectedNote.id))
     }
   }
 
@@ -148,6 +154,18 @@ export function NoteEditor() {
             title={selectedNote.isPinned ? '取消置顶' : '置顶'}
           >
             <Pin className="w-4 h-4" />
+          </button>
+          
+          <button
+            onClick={handleFavorite}
+            className={cn(
+              'p-2 rounded hover:bg-apple-gray-100 dark:hover:bg-apple-gray-800',
+              'transition-colors duration-200',
+              selectedNote.isFavorited ? 'text-purple-500' : 'text-apple-gray-500'
+            )}
+            title={selectedNote.isFavorited ? '取消收藏' : '收藏'}
+          >
+            <Star className={cn('w-4 h-4', selectedNote.isFavorited && 'fill-current')} />
           </button>
           
           <button 

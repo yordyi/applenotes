@@ -19,6 +19,7 @@ import {
   addFolder,
   Folder as FolderType
 } from '@/store/slices/foldersSlice'
+import { selectFolderNoteCounts } from '@/store/slices/notesSlice'
 import { cn } from '@/lib/utils'
 
 interface FolderTreeProps {
@@ -35,6 +36,7 @@ interface FolderItemProps {
 const FolderItem = memo(function FolderItem({ folder, level, isCollapsed, noteCount }: FolderItemProps) {
   const dispatch = useAppDispatch()
   const { selectedFolderId, expandedFolders, folders } = useAppSelector(state => state.folders)
+  const folderNoteCounts = useAppSelector(selectFolderNoteCounts)
   const [isEditing, setIsEditing] = useState(false)
   const [editName, setEditName] = useState(folder.name)
   const [showMenu, setShowMenu] = useState(false)
@@ -245,7 +247,7 @@ const FolderItem = memo(function FolderItem({ folder, level, isCollapsed, noteCo
                 folder={childFolder}
                 level={level + 1}
                 isCollapsed={isCollapsed}
-                noteCount={0} // TODO: 从notes中计算
+                noteCount={folderNoteCounts.get(childFolder.id) || 0}
               />
             ))}
         </div>
@@ -256,12 +258,7 @@ const FolderItem = memo(function FolderItem({ folder, level, isCollapsed, noteCo
 
 export function FolderTree({ isCollapsed }: FolderTreeProps) {
   const { folders } = useAppSelector(state => state.folders)
-  const { notes } = useAppSelector(state => state.notes)
-  
-  // 计算每个文件夹的笔记数量
-  const getNoteCount = (folderId: string) => {
-    return notes.filter(note => note.folderId === folderId).length
-  }
+  const folderNoteCounts = useAppSelector(selectFolderNoteCounts)
   
   // 获取根文件夹（没有父文件夹的）
   const rootFolders = folders
@@ -276,7 +273,7 @@ export function FolderTree({ isCollapsed }: FolderTreeProps) {
           folder={folder}
           level={0}
           isCollapsed={isCollapsed}
-          noteCount={getNoteCount(folder.id)}
+          noteCount={folderNoteCounts.get(folder.id) || 0}
         />
       ))}
     </div>
