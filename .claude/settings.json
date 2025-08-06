@@ -1,95 +1,85 @@
 {
-  "name": "Apple Notes Clone",
-  "description": "Web-based Apple Notes clone with Next.js and Redux",
-  "version": "1.0.0",
-  "environment": {
-    "node": ">=18.0.0",
-    "npm": ">=9.0.0"
+  "env": {
+    "CLAUDE_FLOW_AUTO_COMMIT": "false",
+    "CLAUDE_FLOW_AUTO_PUSH": "false",
+    "CLAUDE_FLOW_HOOKS_ENABLED": "true",
+    "CLAUDE_FLOW_TELEMETRY_ENABLED": "true",
+    "CLAUDE_FLOW_REMOTE_EXECUTION": "true",
+    "CLAUDE_FLOW_GITHUB_INTEGRATION": "true"
   },
-  "preferences": {
-    "language": "typescript",
-    "framework": "nextjs",
-    "stateManagement": "redux-toolkit",
-    "styling": "tailwindcss",
-    "componentPattern": "functional",
-    "codeStyle": {
-      "indentation": 2,
-      "quotes": "single",
-      "semicolons": false,
-      "trailingComma": "es5"
-    }
-  },
-  "tools": {
-    "enabled": [
-      "bash",
-      "read",
-      "write",
-      "edit",
-      "grep",
-      "glob"
+  "permissions": {
+    "allow": [
+      "Bash(npx claude-flow *)",
+      "Bash(npm run lint)",
+      "Bash(npm run test:*)",
+      "Bash(npm test *)",
+      "Bash(git status)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push)",
+      "Bash(git config *)",
+      "Bash(gh *)",
+      "Bash(node *)",
+      "Bash(which *)",
+      "Bash(pwd)",
+      "Bash(ls *)"
     ],
-    "disabled": [],
-    "restrictions": {
-      "bash": {
-        "allowedCommands": ["npm", "npx", "node", "git", "eslint", "tsc"],
-        "deniedCommands": ["rm -rf", "sudo"]
-      }
-    }
+    "deny": ["Bash(rm -rf /)", "Bash(curl * | bash)", "Bash(wget * | sh)", "Bash(eval *)"]
   },
   "hooks": {
-    "preCommit": {
-      "enabled": true,
-      "commands": [
-        "npm run lint",
-        "npm run typecheck"
-      ]
-    },
-    "postEdit": {
-      "enabled": true,
-      "commands": [
-        "npx prettier --write ${file}"
-      ]
-    }
-  },
-  "customCommands": {
-    "component": {
-      "description": "Create a new Apple-style component",
-      "template": "templates/component.tsx"
-    },
-    "slice": {
-      "description": "Create a new Redux slice",
-      "template": "templates/slice.ts"
-    },
-    "hook": {
-      "description": "Create a custom React hook",
-      "template": "templates/hook.ts"
-    }
-  },
-  "projectRules": {
-    "fileNaming": {
-      "components": "PascalCase",
-      "hooks": "camelCase",
-      "slices": "camelCase",
-      "utilities": "camelCase"
-    },
-    "folderStructure": {
-      "components": {
-        "path": "components/",
-        "subfolders": ["common", "layout", "features"]
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cat | jq -r '.tool_input.command // \"\"' | xargs -I {} npx claude-flow@alpha hooks pre-command --command \"{}\" --validate-safety true --prepare-resources true"
+          }
+        ]
       },
-      "store": {
-        "path": "store/",
-        "subfolders": ["slices", "selectors", "middleware"]
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cat | jq -r '.tool_input.file_path // .tool_input.path // \"\"' | xargs -I {} npx claude-flow@alpha hooks pre-edit --file \"{}\" --auto-assign-agents true --load-context true"
+          }
+        ]
       }
-    }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cat | jq -r '.tool_input.command // \"\"' | xargs -I {} npx claude-flow@alpha hooks post-command --command \"{}\" --track-metrics true --store-results true"
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cat | jq -r '.tool_input.file_path // .tool_input.path // \"\"' | xargs -I {} npx claude-flow@alpha hooks post-edit --file \"{}\" --format true --update-memory true --train-neural true"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "npx claude-flow@alpha hooks session-end --generate-summary true --persist-state true --export-metrics true"
+          }
+        ]
+      }
+    ]
   },
-  "dependencies": {
-    "autoInstall": false,
-    "checkUpdates": true,
-    "allowedVersions": {
-      "next": "^14.0.0",
-      "@reduxjs/toolkit": "^2.0.0",
-      "react": "^18.0.0"
-    }
-  }
+  "includeCoAuthoredBy": true,
+  "enabledMcpjsonServers": ["claude-flow", "ruv-swarm"]
 }

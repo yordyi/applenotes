@@ -1,5 +1,55 @@
-export function cn(...classes: (string | undefined | null | boolean)[]) {
-  return classes.filter(Boolean).join(' ')
+import { type ClassValue, clsx } from 'clsx'
+import { twMerge } from 'tailwind-merge'
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
+}
+
+// 格式化Apple风格日期
+export function formatAppleDate(date: string | Date): string {
+  const d = new Date(date)
+  const now = new Date()
+  const diffTime = Math.abs(now.getTime() - d.getTime())
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+
+  if (diffDays === 1) {
+    return '昨天'
+  } else if (diffDays <= 7) {
+    return `${diffDays}天前`
+  } else if (diffDays <= 30) {
+    return `${Math.ceil(diffDays / 7)}周前`
+  } else if (diffDays <= 365) {
+    return `${Math.ceil(diffDays / 30)}月前`
+  } else {
+    return `${Math.ceil(diffDays / 365)}年前`
+  }
+}
+
+// 防抖函数
+export function debounce<T extends (...args: any[]) => any>(
+  func: T,
+  delay: number
+): (...args: Parameters<T>) => void {
+  let timeoutId: NodeJS.Timeout
+  return (...args: Parameters<T>) => {
+    clearTimeout(timeoutId)
+    timeoutId = setTimeout(() => func(...args), delay)
+  }
+}
+
+// 节流函数
+export function throttle<T extends (...args: any[]) => any>(
+  func: T,
+  limit: number
+): (...args: Parameters<T>) => void {
+  let inThrottle: boolean
+  return (...args: Parameters<T>) => {
+    if (!inThrottle) {
+      func(...args)
+      inThrottle = true
+      setTimeout(() => (inThrottle = false), limit)
+    }
+  }
 }
 
 // Apple设计系统样式工具类
@@ -8,7 +58,7 @@ export const appleStyles = {
   button: {
     // 基础按钮样式
     base: 'inline-flex items-center justify-center font-apple-system font-medium focus:outline-none transition-all duration-apple-normal',
-    
+
     // 尺寸变体
     sizes: {
       xs: 'px-2 py-1 text-apple-caption1 rounded-apple-sm',
@@ -17,18 +67,20 @@ export const appleStyles = {
       lg: 'px-6 py-3 text-apple-callout rounded-apple-md',
       xl: 'px-8 py-4 text-apple-body rounded-apple-lg',
     },
-    
+
     // 颜色变体
     variants: {
       primary: 'bg-apple-blue hover:bg-apple-blue/90 text-white shadow-apple-sm',
-      secondary: 'bg-apple-gray-100 hover:bg-apple-gray-200 text-apple-gray-900 dark:bg-apple-gray-800 dark:hover:bg-apple-gray-700 dark:text-apple-gray-100',
+      secondary:
+        'bg-apple-gray-100 hover:bg-apple-gray-200 text-apple-gray-900 dark:bg-apple-gray-800 dark:hover:bg-apple-gray-700 dark:text-apple-gray-100',
       danger: 'bg-apple-red hover:bg-apple-red/90 text-white shadow-apple-sm',
       success: 'bg-apple-green hover:bg-apple-green/90 text-white shadow-apple-sm',
       warning: 'bg-apple-orange hover:bg-apple-orange/90 text-white shadow-apple-sm',
-      ghost: 'hover:bg-apple-gray-100 text-apple-gray-700 dark:hover:bg-apple-gray-800 dark:text-apple-gray-300',
+      ghost:
+        'hover:bg-apple-gray-100 text-apple-gray-700 dark:hover:bg-apple-gray-800 dark:text-apple-gray-300',
       link: 'text-apple-blue hover:text-apple-blue/80 underline-offset-4 hover:underline',
     },
-    
+
     // 状态变体
     states: {
       disabled: 'opacity-50 cursor-not-allowed',
@@ -36,68 +88,79 @@ export const appleStyles = {
       active: 'scale-95 transform',
     },
   },
-  
+
   // 输入框样式
   input: {
     base: 'block w-full font-apple-system transition-all duration-apple-normal focus:outline-none',
-    
+
     sizes: {
       sm: 'px-3 py-1.5 text-apple-footnote rounded-apple-sm',
       md: 'px-4 py-2 text-apple-subhead rounded-apple',
       lg: 'px-6 py-3 text-apple-callout rounded-apple-md',
     },
-    
+
     variants: {
-      default: 'bg-white border border-apple-gray-300 focus:border-apple-blue focus:ring-2 focus:ring-apple-blue/20 dark:bg-apple-gray-800 dark:border-apple-gray-600 dark:focus:border-apple-blue',
-      filled: 'bg-apple-gray-100 border border-transparent focus:bg-white focus:border-apple-blue focus:ring-2 focus:ring-apple-blue/20 dark:bg-apple-gray-800 dark:focus:bg-apple-gray-700',
-      flushed: 'bg-transparent border-0 border-b-2 border-apple-gray-300 focus:border-apple-blue rounded-none dark:border-apple-gray-600',
+      default:
+        'bg-white border border-apple-gray-300 focus:border-apple-blue focus:ring-2 focus:ring-apple-blue/20 dark:bg-apple-gray-800 dark:border-apple-gray-600 dark:focus:border-apple-blue',
+      filled:
+        'bg-apple-gray-100 border border-transparent focus:bg-white focus:border-apple-blue focus:ring-2 focus:ring-apple-blue/20 dark:bg-apple-gray-800 dark:focus:bg-apple-gray-700',
+      flushed:
+        'bg-transparent border-0 border-b-2 border-apple-gray-300 focus:border-apple-blue rounded-none dark:border-apple-gray-600',
     },
-    
+
     states: {
       error: 'border-apple-red focus:border-apple-red focus:ring-apple-red/20',
       disabled: 'opacity-50 cursor-not-allowed bg-apple-gray-100 dark:bg-apple-gray-900',
     },
   },
-  
+
   // 卡片样式
   card: {
     base: 'bg-white rounded-apple-lg shadow-apple transition-all duration-apple-normal dark:bg-apple-gray-800',
-    
+
     variants: {
       default: 'border border-apple-gray-200 dark:border-apple-gray-700',
       elevated: 'shadow-apple-lg border-0',
       outlined: 'border-2 border-apple-gray-300 shadow-none dark:border-apple-gray-600',
-      filled: 'bg-apple-gray-50 border border-apple-gray-200 dark:bg-apple-gray-900 dark:border-apple-gray-700',
+      filled:
+        'bg-apple-gray-50 border border-apple-gray-200 dark:bg-apple-gray-900 dark:border-apple-gray-700',
     },
-    
+
     states: {
-      hover: 'hover:shadow-apple-md hover:scale-[1.02] hover:border-apple-gray-300 dark:hover:border-apple-gray-600',
+      hover:
+        'hover:shadow-apple-md hover:scale-[1.02] hover:border-apple-gray-300 dark:hover:border-apple-gray-600',
       selected: 'ring-2 ring-apple-blue border-apple-blue dark:border-apple-blue',
       disabled: 'opacity-50 cursor-not-allowed',
     },
   },
-  
+
   // 文本样式
   text: {
     // 标题样式
     heading: {
-      'large-title': 'text-apple-large-title font-apple-system font-bold text-system-label dark:text-white',
-      'title1': 'text-apple-title1 font-apple-system font-bold text-system-label dark:text-white',
-      'title2': 'text-apple-title2 font-apple-system font-bold text-system-label dark:text-white',
-      'title3': 'text-apple-title3 font-apple-system font-semibold text-system-label dark:text-white',
-      'headline': 'text-apple-headline font-apple-system font-semibold text-system-label dark:text-white',
+      'large-title':
+        'text-apple-large-title font-apple-system font-bold text-system-label dark:text-white',
+      title1: 'text-apple-title1 font-apple-system font-bold text-system-label dark:text-white',
+      title2: 'text-apple-title2 font-apple-system font-bold text-system-label dark:text-white',
+      title3: 'text-apple-title3 font-apple-system font-semibold text-system-label dark:text-white',
+      headline:
+        'text-apple-headline font-apple-system font-semibold text-system-label dark:text-white',
     },
-    
+
     // 正文样式
     body: {
-      'body': 'text-apple-body font-apple-system text-system-label dark:text-white',
-      'callout': 'text-apple-callout font-apple-system text-system-label dark:text-white',
-      'subhead': 'text-apple-subhead font-apple-system text-system-secondary-label dark:text-apple-gray-300',
-      'footnote': 'text-apple-footnote font-apple-system text-system-secondary-label dark:text-apple-gray-300',
-      'caption1': 'text-apple-caption1 font-apple-system text-system-tertiary-label dark:text-apple-gray-400',
-      'caption2': 'text-apple-caption2 font-apple-system text-system-tertiary-label dark:text-apple-gray-400',
+      body: 'text-apple-body font-apple-system text-system-label dark:text-white',
+      callout: 'text-apple-callout font-apple-system text-system-label dark:text-white',
+      subhead:
+        'text-apple-subhead font-apple-system text-system-secondary-label dark:text-apple-gray-300',
+      footnote:
+        'text-apple-footnote font-apple-system text-system-secondary-label dark:text-apple-gray-300',
+      caption1:
+        'text-apple-caption1 font-apple-system text-system-tertiary-label dark:text-apple-gray-400',
+      caption2:
+        'text-apple-caption2 font-apple-system text-system-tertiary-label dark:text-apple-gray-400',
     },
-    
+
     // 特殊样式
     special: {
       muted: 'text-system-secondary-label dark:text-apple-gray-400',
@@ -109,12 +172,12 @@ export const appleStyles = {
       error: 'text-apple-red',
     },
   },
-  
+
   // 布局样式
   layout: {
     container: 'mx-auto px-4 sm:px-6 lg:px-8',
     section: 'py-apple-lg sm:py-apple-xl',
-    
+
     // Flexbox 布局
     flex: {
       center: 'flex items-center justify-center',
@@ -124,7 +187,7 @@ export const appleStyles = {
       col: 'flex flex-col',
       colCenter: 'flex flex-col items-center justify-center',
     },
-    
+
     // Grid 布局
     grid: {
       '1': 'grid grid-cols-1 gap-apple-md',
@@ -134,7 +197,7 @@ export const appleStyles = {
       auto: 'grid grid-cols-auto gap-apple-md',
     },
   },
-  
+
   // 动画样式
   animation: {
     fadeIn: 'animate-apple-fade-in',
@@ -146,15 +209,16 @@ export const appleStyles = {
     bounce: 'animate-apple-bounce',
     pulse: 'animate-apple-pulse',
   },
-  
+
   // 交互样式
   interaction: {
-    hover: 'hover:bg-apple-gray-100 dark:hover:bg-apple-gray-800 transition-colors duration-apple-fast',
+    hover:
+      'hover:bg-apple-gray-100 dark:hover:bg-apple-gray-800 transition-colors duration-apple-fast',
     active: 'active:scale-95 transform transition-transform duration-apple-fast',
     focus: 'focus:ring-2 focus:ring-apple-blue/20 focus:outline-none',
     disabled: 'disabled:opacity-50 disabled:cursor-not-allowed',
   },
-  
+
   // 状态样式
   state: {
     loading: 'opacity-75 cursor-wait',
@@ -166,7 +230,11 @@ export const appleStyles = {
 }
 
 // 样式构建器函数
-export function buildButtonStyles(variant: keyof typeof appleStyles.button.variants = 'secondary', size: keyof typeof appleStyles.button.sizes = 'md', disabled?: boolean) {
+export function buildButtonStyles(
+  variant: keyof typeof appleStyles.button.variants = 'secondary',
+  size: keyof typeof appleStyles.button.sizes = 'md',
+  disabled?: boolean
+) {
   return cn(
     appleStyles.button.base,
     appleStyles.button.sizes[size],
@@ -175,7 +243,12 @@ export function buildButtonStyles(variant: keyof typeof appleStyles.button.varia
   )
 }
 
-export function buildInputStyles(variant: keyof typeof appleStyles.input.variants = 'default', size: keyof typeof appleStyles.input.sizes = 'md', error?: boolean, disabled?: boolean) {
+export function buildInputStyles(
+  variant: keyof typeof appleStyles.input.variants = 'default',
+  size: keyof typeof appleStyles.input.sizes = 'md',
+  error?: boolean,
+  disabled?: boolean
+) {
   return cn(
     appleStyles.input.base,
     appleStyles.input.sizes[size],
@@ -185,7 +258,12 @@ export function buildInputStyles(variant: keyof typeof appleStyles.input.variant
   )
 }
 
-export function buildCardStyles(variant: keyof typeof appleStyles.card.variants = 'default', hover?: boolean, selected?: boolean, disabled?: boolean) {
+export function buildCardStyles(
+  variant: keyof typeof appleStyles.card.variants = 'default',
+  hover?: boolean,
+  selected?: boolean,
+  disabled?: boolean
+) {
   return cn(
     appleStyles.card.base,
     appleStyles.card.variants[variant],
@@ -208,7 +286,8 @@ export const breakpoints = {
 // 暗色模式工具
 export function useAppleTheme() {
   return {
-    isDark: typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches,
+    isDark:
+      typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches,
     toggleDark: () => {
       if (typeof window !== 'undefined') {
         document.documentElement.classList.toggle('dark')

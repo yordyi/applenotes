@@ -12,7 +12,7 @@ export interface Note {
   tags: string[]
 }
 
-interface NotesState {
+export interface NotesState {
   notes: Note[]
   selectedNoteId: string | null
   searchQuery: string
@@ -66,8 +66,23 @@ const notesSlice = createSlice({
         note.isPinned = !note.isPinned
       }
     },
+    deleteNotesByFolder: (state, action: PayloadAction<string>) => {
+      state.notes = state.notes.filter(note => note.folderId !== action.payload)
+      // 如果当前选中的笔记被删除了，选择另一个笔记
+      if (state.selectedNoteId && !state.notes.find(n => n.id === state.selectedNoteId)) {
+        state.selectedNoteId = state.notes.length > 0 ? state.notes[0].id : null
+      }
+    },
   },
 })
 
-export const { addNote, updateNote, deleteNote, selectNote, setSearchQuery, togglePinNote } = notesSlice.actions
+export const {
+  addNote,
+  updateNote,
+  deleteNote,
+  selectNote,
+  setSearchQuery,
+  togglePinNote,
+  deleteNotesByFolder,
+} = notesSlice.actions
 export default notesSlice.reducer
