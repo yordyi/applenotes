@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, memo } from 'react'
 import { useAppSelector, useAppDispatch } from '@/store/hooks'
 import { cn } from '@/lib/utils'
 import { Sidebar } from './Sidebar'
@@ -10,12 +10,12 @@ import { Toolbar } from './Toolbar'
 import { addNote, selectNote } from '@/store/slices/notesSlice'
 import { toggleSidebar } from '@/store/slices/uiSlice'
 
-export default function MainLayout() {
+function MainLayout() {
   const dispatch = useAppDispatch()
   const [sidebarWidth, setSidebarWidth] = useState(280)
   const [notesListWidth, setNotesListWidth] = useState(350)
   const [isMobile, setIsMobile] = useState(false)
-  
+
   const { selectedNoteId } = useAppSelector(state => state.notes)
   const { sidebarCollapsed } = useAppSelector(state => state.ui)
 
@@ -24,12 +24,31 @@ export default function MainLayout() {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768)
     }
-    
+
     checkMobile()
     window.addEventListener('resize', checkMobile)
-    
+
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
+
+  // 优化回调函数
+  const handleToggleSidebar = useCallback(() => {
+    dispatch(toggleSidebar())
+  }, [dispatch])
+
+  const handleSelectNote = useCallback((noteId: string | null) => {
+    dispatch(selectNote(noteId))
+  }, [dispatch])
+
+  const handleAddNote = useCallback(() => {
+    dispatch(addNote({
+      title: '新建备忘录',
+      content: '',
+      folderId: null,
+      isPinned: false,
+      tags: []
+    }))
+  }, [dispatch])
 
   return (
     <div className="flex h-screen bg-white dark:bg-apple-gray-900 overflow-hidden">
@@ -66,9 +85,9 @@ export default function MainLayout() {
 
       {/* 移动端遮罩层 */}
       {isMobile && !sidebarCollapsed && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/50 z-40"
-          onClick={() => dispatch(toggleSidebar())}
+          onClick={handleToggleSidebar}
         />
       )}
 
@@ -116,7 +135,7 @@ export default function MainLayout() {
             {isMobile && (
               <div className="absolute top-4 left-4 z-10">
                 <button
-                  onClick={() => dispatch(selectNote(null))}
+                  onClick={() => handleSelectNote(null)}
                   className={cn(
                     'flex items-center px-3 py-2 rounded-apple-md',
                     'bg-apple-gray-100 dark:bg-apple-gray-800',
@@ -158,15 +177,7 @@ export default function MainLayout() {
                     'transition-all duration-apple-fast',
                     'shadow-apple-sm hover:shadow-apple-md'
                   )}
-                  onClick={() => {
-                    dispatch(addNote({ 
-                      title: '新建备忘录', 
-                      content: '', 
-                      folderId: null,
-                      isPinned: false,
-                      tags: []
-                    }))
-                  }}
+                  onClick={handleAddNote}
                 >
                   <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -181,3 +192,5 @@ export default function MainLayout() {
     </div>
   )
 }
+
+export default memo(MainLayout)
