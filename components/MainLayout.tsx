@@ -136,7 +136,7 @@ export default function MainLayout() {
             <BasicNoteEditor />
           </>
         ) : (
-          <div className="flex-1 flex items-center justify-center text-apple-gray-500 dark:text-apple-gray-400">
+          <div className="h-full flex items-center justify-center text-apple-gray-500 dark:text-apple-gray-400">
             <div className="text-center max-w-md px-6">
               <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-apple-gray-100 dark:bg-apple-gray-800 flex items-center justify-center">
                 <svg className="w-10 h-10 text-apple-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
