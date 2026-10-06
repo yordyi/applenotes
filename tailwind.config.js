@@ -4,11 +4,33 @@ module.exports = {
     './pages/**/*.{js,ts,jsx,tsx,mdx}',
     './components/**/*.{js,ts,jsx,tsx,mdx}',
     './app/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/**/*.{js,ts,jsx,tsx,mdx}',
   ],
   darkMode: 'class',
   theme: {
     extend: {
       colors: {
+        // 备忘录主题色板：由 app/globals.css 中的 CSS 变量提供，自动跟随系统深色模式
+        n: {
+          window: 'var(--n-window)',
+          sidebar: 'var(--n-sidebar)',
+          label: 'var(--n-label)',
+          label2: 'var(--n-label-2)',
+          label3: 'var(--n-label-3)',
+          separator: 'var(--n-separator)',
+          accent: 'var(--n-accent)',
+          hover: 'var(--n-hover)',
+          selected: 'var(--n-selected)',
+          row: 'var(--n-row-selected)',
+          rowInactive: 'var(--n-row-selected-inactive)',
+          rowLabel: 'var(--n-row-selected-label)',
+          field: 'var(--n-field)',
+          chip: 'var(--n-chip)',
+          menu: 'var(--n-menu)',
+          highlight: 'var(--n-menu-highlight)',
+          grouped: 'var(--n-grouped)',
+          cell: 'var(--n-cell)',
+        },
         // Apple系统颜色
         'apple-gray': {
           50: '#f9fafb',
@@ -32,7 +54,7 @@ module.exports = {
         'apple-purple': '#af52de',
         'apple-teal': '#5ac8fa',
         'apple-indigo': '#5856d6',
-        
+
         // 系统颜色 (浅色模式)
         'system-background': '#ffffff',
         'system-secondary-background': '#f2f2f7',
@@ -40,24 +62,24 @@ module.exports = {
         'system-grouped-background': '#f2f2f7',
         'system-secondary-grouped-background': '#ffffff',
         'system-tertiary-grouped-background': '#f2f2f7',
-        
+
         // 文本颜色
         'system-label': '#000000',
         'system-secondary-label': '#3c3c43',
         'system-tertiary-label': '#3c3c43',
         'system-quaternary-label': '#2c2c2e',
-        
+
         // 分隔线颜色
         'system-separator': '#3c3c43',
         'system-opaque-separator': '#c6c6c8',
-        
+
         // 填充颜色
         'system-fill': '#787880',
         'system-secondary-fill': '#787880',
         'system-tertiary-fill': '#767680',
         'system-quaternary-fill': '#747480',
       },
-      
+
       // Apple字体系统
       fontFamily: {
         'apple-system': [
@@ -81,7 +103,7 @@ module.exports = {
           'monospace',
         ],
       },
-      
+
       // 字体大小系统
       fontSize: {
         'apple-caption2': ['11px', { lineHeight: '13px', fontWeight: '400' }],
@@ -96,30 +118,30 @@ module.exports = {
         'apple-title1': ['28px', { lineHeight: '34px', fontWeight: '400' }],
         'apple-large-title': ['34px', { lineHeight: '41px', fontWeight: '400' }],
       },
-      
+
       // 阴影系统
       boxShadow: {
         'apple-sm': '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
-        'apple': '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
+        apple: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
         'apple-md': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
         'apple-lg': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
         'apple-xl': '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
         'apple-2xl': '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
         'apple-inner': 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.06)',
       },
-      
+
       // 圆角系统
       borderRadius: {
         'apple-xs': '2px',
         'apple-sm': '4px',
-        'apple': '6px',
+        apple: '6px',
         'apple-md': '8px',
         'apple-lg': '12px',
         'apple-xl': '16px',
         'apple-2xl': '24px',
         'apple-3xl': '32px',
       },
-      
+
       // 动画和过渡
       animation: {
         'apple-fade-in': 'appleeFadeIn 0.3s ease-out',
@@ -131,7 +153,7 @@ module.exports = {
         'apple-bounce': 'appleBounce 0.6s ease-out',
         'apple-pulse': 'applePulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
       },
-      
+
       keyframes: {
         appleFadeIn: {
           '0%': { opacity: '0' },
@@ -166,14 +188,14 @@ module.exports = {
           '50%': { opacity: '0.5' },
         },
       },
-      
+
       // 过渡时间
       transitionDuration: {
         'apple-fast': '150ms',
         'apple-normal': '300ms',
         'apple-slow': '500ms',
       },
-      
+
       // 过渡缓动
       transitionTimingFunction: {
         'apple-ease': 'cubic-bezier(0.25, 0.1, 0.25, 1)',
@@ -181,23 +203,23 @@ module.exports = {
         'apple-ease-out': 'cubic-bezier(0, 0, 0.58, 1)',
         'apple-ease-in-out': 'cubic-bezier(0.42, 0, 0.58, 1)',
       },
-      
+
       // 间距系统
       spacing: {
         'apple-xs': '4px',
         'apple-sm': '8px',
-        'apple': '12px',
+        apple: '12px',
         'apple-md': '16px',
         'apple-lg': '24px',
         'apple-xl': '32px',
         'apple-2xl': '48px',
         'apple-3xl': '64px',
       },
-      
+
       // 背景模糊
       backdropBlur: {
         'apple-sm': '4px',
-        'apple': '8px',
+        apple: '8px',
         'apple-md': '12px',
         'apple-lg': '16px',
         'apple-xl': '24px',
