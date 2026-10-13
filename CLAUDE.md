@@ -39,7 +39,3 @@ All app code lives in `src/`. `app/page.tsx` loads `src/components/NotesApp.tsx`
 - Colors are CSS variables in `app/globals.css` (light/dark via `prefers-color-scheme`), exposed to Tailwind as `n-*` (e.g. `bg-n-sidebar`, `text-n-label2`). Don't hardcode grays.
 - Typed hooks: `useAppDispatch`, `useAppSelector`, `useAppStore` from `src/store/hooks.ts`.
 - Import with the `@/src/...` alias.
-
-## Legacy code
-
-`components/`, `hooks/`, `lib/`, `store/` and `types/` at the repo root are the previous implementation and are no longer used. Don't build on them; they are pending removal.
