@@ -231,3 +231,12 @@ mark.search-hit {
 .note-body-mobile h3 {
   font-size: 19px;
 }
+
+/* 正文中的 #标签 与搜索匹配（CSS 自定义高亮，不改动正文 HTML） */
+::highlight(note-tag) {
+  color: var(--n-accent);
+}
+::highlight(note-search) {
+  background-color: rgba(255, 199, 0, 0.45);
+  color: var(--n-label);
+}

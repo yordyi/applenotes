@@ -86,6 +86,8 @@ export const selectSections = createSelector(
     selectSearch,
     (s: RootState) => s.ui.sortBy,
     (s: RootState) => s.ui.groupByDate,
+    // Not read, but recomputes the date groups when the day changes.
+    (s: RootState) => s.ui.today,
   ],
   (notes, selection, search, sortBy, groupByDate) =>
     sectionNotes(notes, {

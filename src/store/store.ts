@@ -2,8 +2,9 @@ import { combineReducers, configureStore } from '@reduxjs/toolkit'
 import notes from './notesSlice'
 import folders from './foldersSlice'
 import ui from './uiSlice'
+import history from './historySlice'
 
-const rootReducer = combineReducers({ notes, folders, ui })
+const rootReducer = combineReducers({ notes, folders, ui, history })
 
 export type RootState = ReturnType<typeof rootReducer>
 

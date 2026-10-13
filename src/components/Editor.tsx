@@ -5,18 +5,20 @@ import { useEffect, useRef, type ReactNode } from 'react'
 import { formatEditorDate } from '@/src/lib/dates'
 import {
   activeStyles,
-  emitChange,
   insertImage,
   insertTable,
   placeCaret,
   setActiveEditor,
   setBlockStyle,
+  setChecked,
   toggleChecked,
   toggleInline,
   toggleList,
   type BlockStyle,
   type ListKind,
 } from '@/src/lib/editorCommands'
+import { EditorHistory, isTyping } from '@/src/lib/editorHistory'
+import { clearEditorHighlights, highlightEditor } from '@/src/lib/highlights'
 import { hydrateImages, imageFileToBlob, saveImage, serializeEditor } from '@/src/lib/images'
 import { NEW_NOTE_HTML } from '@/src/lib/note'
 import type { Note } from '@/src/lib/types'
@@ -258,6 +260,8 @@ function NoteEditor({ note, mobile }: { note: Note; mobile: boolean }) {
   const element = useRef<HTMLDivElement | null>(null)
   const readOnly = Boolean(note.deletedAt)
   const focused = useAppSelector(s => s.ui.focus === 'editor')
+  const search = useAppSelector(s => s.ui.search)
+  const history = useRef<EditorHistory | null>(null)
 
   useEffect(() => {
     const el = ref.current
@@ -265,19 +269,52 @@ function NoteEditor({ note, mobile }: { note: Note; mobile: boolean }) {
     element.current = el
     el.innerHTML = note.html
     hydrateImages(el)
-    setActiveEditor(el)
+    refreshHighlights()
+    const h = new EditorHistory(el, () => {
+      hydrateImages(el)
+      refreshHighlights()
+      save()
+    })
+    history.current = h
+    setActiveEditor(el, h)
     document.execCommand('defaultParagraphSeparator', false, 'p')
+    // Native beforeinput (React's onBeforeInput only covers text): close the
+    // current undo step before Enter, paste, ⌘B and the like, and route the
+    // browser's own Undo / Redo (e.g. from the context menu) to our history.
+    const onBeforeInput = (e: InputEvent) => {
+      if (e.inputType === 'historyUndo' || e.inputType === 'historyRedo') {
+        e.preventDefault()
+        if (e.inputType === 'historyUndo') h.undo()
+        else h.redo()
+      } else if (!isTyping(e.inputType)) {
+        h.checkpoint()
+      }
+    }
+    el.addEventListener('beforeinput', onBeforeInput)
     if (store.getState().ui.focus === 'editor' && !readOnly) {
       el.focus()
       placeCaret(el, Boolean(note.title))
     }
     return () => {
+      el.removeEventListener('beforeinput', onBeforeInput)
+      h.dispose()
+      clearTimeout(highlightTimer.current)
+      clearEditorHighlights()
       setActiveEditor(null)
       flush()
     }
     // Only on mount: afterwards the DOM is the source of truth for this note.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // Searching shows the matches in the open note too, scrolled into view.
+  useEffect(() => {
+    const hit = refreshHighlights()
+    if (hit && search.trim()) {
+      hit.startContainer.parentElement?.scrollIntoView({ block: 'center' })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search])
 
   useEffect(() => {
     const el = ref.current
@@ -286,6 +323,12 @@ function NoteEditor({ note, mobile }: { note: Note; mobile: boolean }) {
       placeCaret(el, true)
     }
   }, [focused, readOnly])
+
+  const highlightTimer = useRef<ReturnType<typeof setTimeout>>()
+  const refreshHighlights = () => {
+    const el = element.current
+    return el ? highlightEditor(el, store.getState().ui.search) : null
+  }
 
   // Typing is saved after a short pause, so the list and storage aren't
   // updated on every keystroke.
@@ -320,6 +363,9 @@ function NoteEditor({ note, mobile }: { note: Note; mobile: boolean }) {
       )
       if (li && el.contains(li)) li.setAttribute('data-checked', 'false')
     }
+    history.current?.changed(native.inputType)
+    clearTimeout(highlightTimer.current)
+    highlightTimer.current = setTimeout(refreshHighlights, 120)
     save()
   }
 
@@ -329,13 +375,20 @@ function NoteEditor({ note, mobile }: { note: Note; mobile: boolean }) {
     const x = e.clientX - li.getBoundingClientRect().left
     if (x < 24) {
       e.preventDefault()
-      li.setAttribute('data-checked', li.getAttribute('data-checked') === 'true' ? 'false' : 'true')
-      emitChange(e.currentTarget)
+      setChecked(e.currentTarget, li, li.getAttribute('data-checked') !== 'true')
     }
   }
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     const mod = e.metaKey || e.ctrlKey
+    // ⌘Z / ⇧⌘Z (and Ctrl+Y) undo and redo edits in this note.
+    if (mod && !e.altKey && (e.code === 'KeyZ' || (e.code === 'KeyY' && !e.metaKey))) {
+      e.preventDefault()
+      e.stopPropagation()
+      if (e.code === 'KeyZ' && !e.shiftKey) history.current?.undo()
+      else history.current?.redo()
+      return
+    }
     if (mod && e.shiftKey) {
       const blocks: Record<string, BlockStyle> = {
         KeyT: 'h1',

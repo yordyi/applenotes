@@ -33,7 +33,7 @@ export function htmlToLines(html: string): string[] {
     .filter(Boolean)
 }
 
-const TAG_RE = /(?:^|\s)#([\p{L}\p{N}_-]+)/gu
+export const TAG_RE = /(?:^|\s)#([\p{L}\p{N}_-]+)/gu
 
 export function extractTags(lines: string[]): string[] {
   const tags = new Set<string>()

@@ -1,7 +1,8 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
 import { deriveFields, NEW_NOTE_HTML, newId } from '@/src/lib/note'
 import type { Note } from '@/src/lib/types'
-import { applyRemote } from './sync'
+import type { Changes } from './db'
+import { applyPatch, applyRemote } from './sync'
 
 export const TRASH_RETENTION_DAYS = 30
 
@@ -105,21 +106,25 @@ const notesSlice = createSlice({
     },
   },
   extraReducers: builder => {
-    builder.addCase(applyRemote, (state, { payload }) => {
-      const index = new Map(state.notes.map((n, i) => [n.id, i]))
-      for (const note of payload.putNotes) {
-        const i = index.get(note.id)
-        if (i === undefined) state.notes.push(note)
-        // Keep a local edit that is newer than what the other tab saved.
-        else if (state.notes[i].updatedAt <= note.updatedAt) state.notes[i] = note
-      }
-      if (payload.deleteNoteIds.length) {
-        const gone = new Set(payload.deleteNoteIds)
-        state.notes = state.notes.filter(n => !gone.has(n.id))
-      }
-    })
+    builder
+      .addCase(applyRemote, (state, { payload }) => applyChanges(state, payload, true))
+      .addCase(applyPatch, (state, { payload }) => applyChanges(state, payload, false))
   },
 })
+
+function applyChanges(state: NotesState, changes: Changes, keepNewerLocal: boolean) {
+  const index = new Map(state.notes.map((n, i) => [n.id, i]))
+  for (const note of changes.putNotes) {
+    const i = index.get(note.id)
+    if (i === undefined) state.notes.push(note)
+    // From another tab: keep a local edit that is newer than what it saved.
+    else if (!keepNewerLocal || state.notes[i].updatedAt <= note.updatedAt) state.notes[i] = note
+  }
+  if (changes.deleteNoteIds.length) {
+    const gone = new Set(changes.deleteNoteIds)
+    state.notes = state.notes.filter(n => !gone.has(n.id))
+  }
+}
 
 export const {
   createNote,

@@ -1,20 +1,32 @@
 /**
  * Formatting commands for the note editor (a contentEditable element).
  * Uses document.execCommand where browsers implement the behavior well
- * (inline styles, lists, undo), and direct DOM edits for checklists.
+ * (inline styles, lists), and direct DOM edits for checklists and tables.
+ * Undo is handled by EditorHistory, not the browser.
  */
+
+import type { EditorHistory } from './editorHistory'
 
 export type BlockStyle = 'h1' | 'h2' | 'h3' | 'p' | 'pre' | 'blockquote'
 export type ListKind = 'bullet' | 'dashed' | 'numbered' | 'checklist'
 
 let activeEditor: HTMLElement | null = null
+let activeHistory: EditorHistory | null = null
 
-export function setActiveEditor(el: HTMLElement | null) {
+export function setActiveEditor(el: HTMLElement | null, history: EditorHistory | null = null) {
   activeEditor = el
+  activeHistory = history
 }
 
 export function getActiveEditor(): HTMLElement | null {
   return activeEditor?.isConnected ? activeEditor : null
+}
+
+/** Checks or unchecks a checklist item, e.g. when its circle is clicked. */
+export function setChecked(root: HTMLElement, li: Element, checked: boolean) {
+  activeHistory?.checkpoint()
+  li.setAttribute('data-checked', String(checked))
+  emitChange(root)
 }
 
 /** Tells React the editor changed after a DOM edit that fires no input event. */
@@ -61,6 +73,15 @@ function closest(root: HTMLElement, node: Node | null, selector: string): HTMLEl
   return found && root.contains(found) && found !== root ? found : null
 }
 
+/** Starts a command: focuses the editor and closes the current undo step. */
+function begin(): HTMLElement | null {
+  const root = getActiveEditor()
+  if (!root) return null
+  ensureFocus(root)
+  activeHistory?.checkpoint()
+  return root
+}
+
 function ensureFocus(root: HTMLElement) {
   if (document.activeElement !== root) {
     root.focus()
@@ -83,16 +104,14 @@ function exec(command: string, value?: string) {
 }
 
 export function toggleInline(kind: 'bold' | 'italic' | 'underline' | 'strikeThrough') {
-  const root = getActiveEditor()
+  const root = begin()
   if (!root) return
-  ensureFocus(root)
   exec(kind)
 }
 
 export function setBlockStyle(style: BlockStyle) {
-  const root = getActiveEditor()
+  const root = begin()
   if (!root) return
-  ensureFocus(root)
   const list = closest(root, selectionNode(root), 'ul,ol')
   // Applying a paragraph style to a list item turns it back into a paragraph first.
   if (list) exec(list.tagName === 'OL' ? 'insertOrderedList' : 'insertUnorderedList')
@@ -126,9 +145,8 @@ function styleList(list: HTMLElement, kind: ListKind) {
 
 /** Turns the current paragraph(s) into a list of `kind`, or back into text if already one. */
 export function toggleList(kind: ListKind) {
-  const root = getActiveEditor()
+  const root = begin()
   if (!root) return
-  ensureFocus(root)
   const list = closest(root, selectionNode(root), 'ul,ol')
   const current = list ? listKindOf(list) : null
 
@@ -153,15 +171,15 @@ export function toggleChecked() {
   if (!root) return
   const li = closest(root, selectionNode(root), 'ul.checklist > li')
   if (!li) return
+  activeHistory?.checkpoint()
   li.setAttribute('data-checked', li.getAttribute('data-checked') === 'true' ? 'false' : 'true')
   emitChange(root)
 }
 
 /** Inserts a table after the current top-level block and puts the caret in its first cell. */
 export function insertTable(rows = 2, cols = 3) {
-  const root = getActiveEditor()
+  const root = begin()
   if (!root) return
-  ensureFocus(root)
   let block = selectionNode(root)
   while (block && block.parentNode !== root) block = block.parentNode
   const table = document.createElement('table')
@@ -182,9 +200,8 @@ export function insertTable(rows = 2, cols = 3) {
 
 /** Inserts a stored image; `url` shows it now and is dropped when the note is saved. */
 export function insertImage(id: string, url: string) {
-  const root = getActiveEditor()
+  const root = begin()
   if (!root) return
-  ensureFocus(root)
   exec('insertHTML', `<img data-image-id="${id}" src="${url}" alt=""><p><br></p>`)
   emitChange(root)
 }
