@@ -11,12 +11,10 @@ import {
 import { useEffect, useState, type ReactNode } from 'react'
 import { Provider } from 'react-redux'
 import { toggleList } from '@/src/lib/editorCommands'
-import { ensureSelectedNote, newFolder, newNote } from '@/src/store/actions'
+import { newFolder, newNote } from '@/src/store/actions'
+import { startApp, type Running } from '@/src/store/boot'
 import { useAppDispatch, useAppSelector, useAppStore } from '@/src/store/hooks'
-import { purgeExpired } from '@/src/store/notesSlice'
-import { loadState, persist } from '@/src/store/persistence'
 import { selectListNotes, selectListTitle, selectSelectedNote } from '@/src/store/selectors'
-import { makeStore } from '@/src/store/store'
 import {
   setListWidth,
   setMobilePane,
@@ -28,6 +26,7 @@ import { DialogHost, showToast } from './Dialog'
 import {
   EditorPane,
   EditorToolbar,
+  flushEditor,
   formatMenu,
   pickImage,
   SEARCH_INPUT_ID,
@@ -39,30 +38,38 @@ import { NoteListBody, NoteListHeader } from './NoteList'
 import { Sidebar, SidebarContent } from './Sidebar'
 import { useIsMobile } from './ui'
 
-function getStorage(): Storage | undefined {
-  try {
-    return window.localStorage
-  } catch {
-    return undefined
-  }
-}
-
 export default function NotesApp() {
-  const [store] = useState(() => {
-    const s = makeStore(loadState(getStorage()))
-    s.dispatch(purgeExpired(new Date().toISOString()))
-    s.dispatch(ensureSelectedNote())
-    return s
-  })
+  const [running, setRunning] = useState<Running | null>(null)
 
   useEffect(() => {
-    const storage = getStorage()
-    if (!storage) return
-    return persist(store, storage, () => showToast('存储空间已满，最近的更改可能无法保存。'))
-  }, [store])
+    let app: Running | null = null
+    let cancelled = false
+    startApp(() => showToast('无法存储，最近的更改可能未保存。')).then(started => {
+      if (cancelled) return started.stop()
+      app = started
+      setRunning(started)
+      if (!started.persistent) showToast('此浏览器无法存储备忘录，关闭页面后更改会丢失。')
+    })
+    // Hidden pages may be closed without warning: save edits still being typed.
+    const save = () => {
+      flushEditor()
+      app?.flush()
+    }
+    const onVisibility = () => document.visibilityState === 'hidden' && save()
+    document.addEventListener('visibilitychange', onVisibility)
+    window.addEventListener('pagehide', save)
+    return () => {
+      cancelled = true
+      document.removeEventListener('visibilitychange', onVisibility)
+      window.removeEventListener('pagehide', save)
+      flushEditor()
+      app?.stop()
+    }
+  }, [])
 
+  if (!running) return null
   return (
-    <Provider store={store}>
+    <Provider store={running.store}>
       <Shortcuts />
       <Layout />
       <MenuHost />

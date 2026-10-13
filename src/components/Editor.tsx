@@ -6,7 +6,6 @@ import { formatEditorDate } from '@/src/lib/dates'
 import {
   activeStyles,
   emitChange,
-  imageFileToDataUrl,
   insertImage,
   insertTable,
   placeCaret,
@@ -18,6 +17,7 @@ import {
   type BlockStyle,
   type ListKind,
 } from '@/src/lib/editorCommands'
+import { hydrateImages, imageFileToBlob, saveImage, serializeEditor } from '@/src/lib/images'
 import { NEW_NOTE_HTML } from '@/src/lib/note'
 import type { Note } from '@/src/lib/types'
 import { newNote, restoreNote, runSearch } from '@/src/store/actions'
@@ -47,7 +47,8 @@ export function pickImage() {
 
 async function addImage(file: File) {
   try {
-    insertImage(await imageFileToDataUrl(file))
+    const { id, url } = await saveImage(await imageFileToBlob(file))
+    insertImage(id, url)
   } catch {
     showToast('无法插入此图像')
   }
@@ -233,30 +234,47 @@ export function SearchField({ mobile = false }: { mobile?: boolean }) {
   )
 }
 
+/** Saves edits still waiting in the editor's debounce, e.g. before the page is hidden. */
+let flushPendingEdit: (() => void) | null = null
+
+export function flushEditor() {
+  flushPendingEdit?.()
+}
+
+const SAVE_DELAY = 250
+
 export function EditorPane({ mobile = false }: { mobile?: boolean }) {
   const note = useAppSelector(selectSelectedNote)
+  const revision = useAppSelector(s => s.ui.editorRevision)
   if (!note) return <div className="flex-1" />
-  return <NoteEditor key={note.id} note={note} mobile={mobile} />
+  return <NoteEditor key={`${note.id}:${revision}`} note={note} mobile={mobile} />
 }
 
 function NoteEditor({ note, mobile }: { note: Note; mobile: boolean }) {
   const dispatch = useAppDispatch()
   const store = useAppStore()
   const ref = useRef<HTMLDivElement>(null)
+  // React clears `ref` before unmount cleanup runs; the final save still needs the element.
+  const element = useRef<HTMLDivElement | null>(null)
   const readOnly = Boolean(note.deletedAt)
   const focused = useAppSelector(s => s.ui.focus === 'editor')
 
   useEffect(() => {
     const el = ref.current
     if (!el) return
+    element.current = el
     el.innerHTML = note.html
+    hydrateImages(el)
     setActiveEditor(el)
     document.execCommand('defaultParagraphSeparator', false, 'p')
     if (store.getState().ui.focus === 'editor' && !readOnly) {
       el.focus()
       placeCaret(el, Boolean(note.title))
     }
-    return () => setActiveEditor(null)
+    return () => {
+      setActiveEditor(null)
+      flush()
+    }
     // Only on mount: afterwards the DOM is the source of truth for this note.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -269,9 +287,21 @@ function NoteEditor({ note, mobile }: { note: Note; mobile: boolean }) {
     }
   }, [focused, readOnly])
 
+  // Typing is saved after a short pause, so the list and storage aren't
+  // updated on every keystroke.
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const flush = () => {
+    if (!timer.current) return
+    clearTimeout(timer.current)
+    timer.current = null
+    if (flushPendingEdit === flush) flushPendingEdit = null
+    const el = element.current
+    if (el) dispatch(editNote({ id: note.id, html: serializeEditor(el) }))
+  }
   const save = () => {
-    const el = ref.current
-    if (el) dispatch(editNote({ id: note.id, html: el.innerHTML }))
+    if (timer.current) clearTimeout(timer.current)
+    timer.current = setTimeout(flush, SAVE_DELAY)
+    flushPendingEdit = flush
   }
 
   const onInput = (e: React.FormEvent<HTMLDivElement>) => {
@@ -407,6 +437,7 @@ function NoteEditor({ note, mobile }: { note: Note; mobile: boolean }) {
           onPaste={onPaste}
           onDrop={onDrop}
           onFocus={() => dispatch(setFocus('editor'))}
+          onBlur={flush}
         />
       </div>
     </div>

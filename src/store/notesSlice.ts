@@ -1,6 +1,7 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
 import { deriveFields, NEW_NOTE_HTML, newId } from '@/src/lib/note'
 import type { Note } from '@/src/lib/types'
+import { applyRemote } from './sync'
 
 export const TRASH_RETENTION_DAYS = 30
 
@@ -102,6 +103,21 @@ const notesSlice = createSlice({
         n => !n.deletedAt || new Date(n.deletedAt).getTime() > cutoff
       )
     },
+  },
+  extraReducers: builder => {
+    builder.addCase(applyRemote, (state, { payload }) => {
+      const index = new Map(state.notes.map((n, i) => [n.id, i]))
+      for (const note of payload.putNotes) {
+        const i = index.get(note.id)
+        if (i === undefined) state.notes.push(note)
+        // Keep a local edit that is newer than what the other tab saved.
+        else if (state.notes[i].updatedAt <= note.updatedAt) state.notes[i] = note
+      }
+      if (payload.deleteNoteIds.length) {
+        const gone = new Set(payload.deleteNoteIds)
+        state.notes = state.notes.filter(n => !gone.has(n.id))
+      }
+    })
   },
 })
 

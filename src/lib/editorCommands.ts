@@ -180,11 +180,12 @@ export function insertTable(rows = 2, cols = 3) {
   emitChange(root)
 }
 
-export function insertImage(src: string) {
+/** Inserts a stored image; `url` shows it now and is dropped when the note is saved. */
+export function insertImage(id: string, url: string) {
   const root = getActiveEditor()
   if (!root) return
   ensureFocus(root)
-  exec('insertHTML', `<img src="${src.replace(/"/g, '&quot;')}" alt=""><p><br></p>`)
+  exec('insertHTML', `<img data-image-id="${id}" src="${url}" alt=""><p><br></p>`)
   emitChange(root)
 }
 
@@ -217,30 +218,5 @@ export function activeStyles(): ActiveStyles {
     italic: state('italic'),
     underline: state('underline'),
     strikeThrough: state('strikeThrough'),
-  }
-}
-
-/** Reads an image file and shrinks it so notes stay small enough for localStorage. */
-export async function imageFileToDataUrl(file: File, maxSize = 1600): Promise<string> {
-  const url = URL.createObjectURL(file)
-  try {
-    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
-      const el = new Image()
-      el.onload = () => resolve(el)
-      el.onerror = reject
-      el.src = url
-    })
-    const scale = Math.min(1, maxSize / Math.max(img.naturalWidth, img.naturalHeight))
-    const canvas = document.createElement('canvas')
-    canvas.width = Math.round(img.naturalWidth * scale)
-    canvas.height = Math.round(img.naturalHeight * scale)
-    const ctx = canvas.getContext('2d')
-    if (!ctx) throw new Error('canvas unavailable')
-    ctx.fillStyle = '#fff'
-    ctx.fillRect(0, 0, canvas.width, canvas.height)
-    ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
-    return canvas.toDataURL('image/jpeg', 0.85)
-  } finally {
-    URL.revokeObjectURL(url)
   }
 }

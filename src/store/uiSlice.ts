@@ -7,6 +7,7 @@ import {
   type SortBy,
   type ViewMode,
 } from '@/src/lib/types'
+import { applyRemote } from './sync'
 
 export interface UIState {
   selection: Selection
@@ -25,6 +26,8 @@ export interface UIState {
   renamingFolderId: string | null
   /** Gallery view: whether the selected note is open full-size. */
   galleryOpen: boolean
+  /** Bumped when another tab changes the open note, so the editor reloads it. */
+  editorRevision: number
 }
 
 export const initialUIState: UIState = {
@@ -42,6 +45,7 @@ export const initialUIState: UIState = {
   mobilePane: 'folders',
   renamingFolderId: null,
   galleryOpen: false,
+  editorRevision: 0,
 }
 
 export const SIDEBAR_WIDTH = { min: 160, max: 360 }
@@ -100,6 +104,18 @@ const uiSlice = createSlice({
     setRenamingFolder(state, action: PayloadAction<string | null>) {
       state.renamingFolderId = action.payload
     },
+  },
+  extraReducers: builder => {
+    builder.addCase(applyRemote, (state, { payload }) => {
+      const sel = state.selection
+      if (sel.kind === 'folder' && payload.deleteFolderIds.includes(sel.id)) {
+        state.selection = { kind: 'folder', id: DEFAULT_FOLDER_ID }
+      }
+      // Don't reload under the caret: while typing here, this tab's text wins.
+      if (state.focus !== 'editor' && payload.putNotes.some(n => n.id === state.selectedNoteId)) {
+        state.editorRevision++
+      }
+    })
   },
 })
 
