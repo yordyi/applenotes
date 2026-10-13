@@ -72,3 +72,14 @@ export function newId(): string {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) return crypto.randomUUID()
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`
 }
+
+/**
+ * Images live in IndexedDB. Note HTML refers to them as
+ * `<img data-image-id="…">`; the `src` is a blob: URL filled in when shown.
+ */
+export const IMAGE_ID_ATTR = 'data-image-id'
+const IMAGE_ID_RE = /<img\b[^>]*\bdata-image-id="([^"]+)"/gi
+
+export function imageIds(html: string): string[] {
+  return Array.from(html.matchAll(IMAGE_ID_RE), m => m[1])
+}

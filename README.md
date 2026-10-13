@@ -14,7 +14,7 @@
 - 正文中的 `#标签` 自动识别，可在边栏按标签筛选
 - 全局搜索，高亮匹配内容
 - 深色模式跟随系统
-- 数据保存在浏览器 localStorage
+- 数据保存在浏览器 IndexedDB，图片单独存储；多个标签页之间实时同步
 
 ## 快捷键
 
@@ -37,6 +37,7 @@ Windows 和 Linux 上用 Ctrl 代替 ⌘。部分组合（如 ⌘N、⇧⌘T）�
 npm install
 npm run dev        # http://localhost:3000
 npm test           # 单元测试（vitest）
+npm run test:e2e   # 端到端测试（Playwright，需先 npm run build）
 npm run typecheck
 npm run lint
 npm run build

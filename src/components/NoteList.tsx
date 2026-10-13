@@ -1,9 +1,10 @@
 'use client'
 
 import { ChevronDown, Folder as FolderIcon, LayoutGrid, List, Trash2 } from 'lucide-react'
-import { Fragment, useEffect, useMemo, useRef, type ReactNode } from 'react'
+import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { formatListDate, sortDate } from '@/src/lib/dates'
-import { displayTitle, NO_ADDITIONAL_TEXT } from '@/src/lib/note'
+import { imageUrl, hydrateImages } from '@/src/lib/images'
+import { displayTitle, imageIds, NO_ADDITIONAL_TEXT } from '@/src/lib/note'
 import type { Note } from '@/src/lib/types'
 import { stepSelection } from '@/src/store/actions'
 import { useAppDispatch, useAppSelector, useAppStore } from '@/src/store/hooks'
@@ -224,9 +225,19 @@ export function NoteListBody({ mobile = false }: { mobile?: boolean }) {
   )
 }
 
-function firstImage(html: string): string | null {
-  const m = /<img[^>]+src="([^"]+)"/i.exec(html)
-  return m ? m[1] : null
+/** URL of the note's first image, for the row thumbnail. */
+function useFirstImage(html: string): string | null {
+  const id = imageIds(html)[0] ?? null
+  const [url, setUrl] = useState<{ id: string; url: string | null } | null>(null)
+  useEffect(() => {
+    if (!id) return
+    let live = true
+    imageUrl(id).then(u => live && setUrl({ id, url: u }))
+    return () => {
+      live = false
+    }
+  }, [id])
+  return id && url?.id === id ? url.url : null
 }
 
 function Highlight({ text, query }: { text: string; query: string }) {
@@ -281,7 +292,7 @@ function NoteRow({
   const ref = useRef<HTMLDivElement>(null)
   const sortBy = useAppSelector(s => s.ui.sortBy)
   const now = new Date()
-  const image = firstImage(note.html)
+  const image = useFirstImage(note.html)
   const snippet = query.trim() ? snippetAround(note.snippet, query) : note.snippet
 
   useEffect(() => {
@@ -352,6 +363,13 @@ function snippetAround(snippet: string, query: string): string {
   return i > 20 ? `…${snippet.slice(i - 12)}` : snippet
 }
 
+/** The start of a note, enough to fill a gallery card; the browser closes cut-off tags. */
+function thumbnailHtml(html: string): string {
+  if (html.length <= 2000) return html
+  const cut = html.lastIndexOf('>', 2000)
+  return html.slice(0, cut + 1)
+}
+
 interface CardProps {
   note: Note
   selected: boolean
@@ -364,9 +382,13 @@ interface CardProps {
 function GalleryCard({ note, selected, focused, onSelect, onOpen, onContextMenu }: CardProps) {
   const ref = useRef<HTMLDivElement>(null)
   const sortBy = useAppSelector(s => s.ui.sortBy)
+  const thumb = useRef<HTMLDivElement>(null)
   useEffect(() => {
     if (selected) ref.current?.scrollIntoView({ block: 'nearest' })
   }, [selected])
+  useEffect(() => {
+    if (thumb.current) hydrateImages(thumb.current)
+  }, [note.html])
   return (
     <div
       ref={ref}
@@ -389,7 +411,11 @@ function GalleryCard({ note, selected, focused, onSelect, onOpen, onContextMenu 
             : 'border-n-separator'
         )}
       >
-        <div className="note-body note-thumb" dangerouslySetInnerHTML={{ __html: note.html }} />
+        <div
+          ref={thumb}
+          className="note-body note-thumb"
+          dangerouslySetInnerHTML={{ __html: thumbnailHtml(note.html) }}
+        />
       </div>
       <div className="mt-1.5 truncate text-center text-[12px] font-bold">{displayTitle(note)}</div>
       <div className="text-center text-[11px] text-n-label2">
