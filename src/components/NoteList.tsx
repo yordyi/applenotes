@@ -6,7 +6,7 @@ import { formatListDate, sortDate } from '@/src/lib/dates'
 import { imageUrl, hydrateImages } from '@/src/lib/images'
 import { displayTitle, imageIds, NO_ADDITIONAL_TEXT } from '@/src/lib/note'
 import type { Note } from '@/src/lib/types'
-import { stepSelection } from '@/src/store/actions'
+import { pinNote, stepSelection } from '@/src/store/actions'
 import { useAppDispatch, useAppSelector, useAppStore } from '@/src/store/hooks'
 import {
   selectFolders,
@@ -24,7 +24,8 @@ import {
   setViewMode,
 } from '@/src/store/uiSlice'
 import { openMenu, openMenuAt } from './Menu'
-import { noteMenu, requestDelete, sortMenu } from './menus'
+import { moveMenu, noteMenu, requestDelete, sortMenu } from './menus'
+import { SwipeRow } from './SwipeRow'
 import { NOTE_DRAG_TYPE, SidebarToggle } from './Sidebar'
 import { cn, shortcut, ToolbarButton } from './ui'
 
@@ -112,9 +113,24 @@ function useListKeys() {
       e.preventDefault()
       if (viewMode === 'gallery') dispatch(setGalleryOpen(true))
       dispatch(setFocus('editor'))
+    } else if (e.key === 'ContextMenu' || (e.shiftKey && e.key === 'F10')) {
+      // Keyboard access to the note's context menu.
+      const note = selectSelectedNote(store.getState())
+      const row = e.currentTarget.querySelector('[aria-selected="true"]')
+      if (note && row) {
+        e.preventDefault()
+        const r = row.getBoundingClientRect()
+        openMenu({
+          x: r.left + 24,
+          y: r.bottom - 4,
+          items: noteMenu(dispatch, store.getState(), note),
+        })
+      }
     }
   }
 }
+
+const optionId = (id: string) => `note-option-${id}`
 
 export function NoteListBody({ mobile = false }: { mobile?: boolean }) {
   const dispatch = useAppDispatch()
@@ -150,28 +166,39 @@ export function NoteListBody({ mobile = false }: { mobile?: boolean }) {
     <div
       ref={ref}
       tabIndex={0}
+      role="listbox"
       aria-label="备忘录列表"
+      aria-activedescendant={selectedId && !empty ? optionId(selectedId) : undefined}
+      aria-describedby={inTrash || empty ? 'note-list-notice' : undefined}
       className="flex-1 overflow-y-auto outline-none scrollbar-thin"
       onKeyDown={onKeyDown}
       onMouseDown={() => dispatch(setFocus('list'))}
     >
-      {inTrash && (
-        <p className="px-6 pb-2 pt-1 text-center text-[11px] leading-4 text-n-label2">
-          {TRASH_NOTICE}
-        </p>
-      )}
-      {empty && (
-        <p className="mt-24 text-center text-[13px] text-n-label3">
-          {search.trim() ? '无结果' : '无备忘录'}
-        </p>
+      {/* Read out through aria-describedby: a listbox may only contain options. */}
+      {(inTrash || empty) && (
+        <div id="note-list-notice" aria-hidden="true">
+          {inTrash && (
+            <p className="px-6 pb-2 pt-1 text-center text-[11px] leading-4 text-n-label2">
+              {TRASH_NOTICE}
+            </p>
+          )}
+          {empty && (
+            <p className="mt-24 text-center text-[13px] text-n-label3">
+              {search.trim() ? '无结果' : '无备忘录'}
+            </p>
+          )}
+        </div>
       )}
       {sections.map(section => (
         <section
           key={section.key}
+          role="group"
+          aria-label={section.title || undefined}
           className={cn(gallery ? 'px-5 pb-4' : mobile ? 'px-4 pb-2' : 'px-2.5 pb-2')}
         >
           {section.title && (
             <h3
+              aria-hidden="true"
               className={cn(
                 'font-bold',
                 mobile ? 'px-1 pb-1.5 pt-4 text-[20px]' : 'px-2.5 pb-1 pt-3 text-[13px]'
@@ -289,6 +316,8 @@ function NoteRow({
   onSelect,
   onContextMenu,
 }: RowProps) {
+  const dispatch = useAppDispatch()
+  const store = useAppStore()
   const ref = useRef<HTMLDivElement>(null)
   const sortBy = useAppSelector(s => s.ui.sortBy)
   const now = new Date()
@@ -299,9 +328,10 @@ function NoteRow({
     if (selected) ref.current?.scrollIntoView({ block: 'nearest' })
   }, [selected])
 
-  return (
+  const row = (
     <div
       ref={ref}
+      id={optionId(note.id)}
       role="option"
       aria-selected={selected}
       draggable={!note.deletedAt}
@@ -355,6 +385,21 @@ function NoteRow({
       )}
     </div>
   )
+  if (!mobile) return row
+  return (
+    <SwipeRow
+      id={note.id}
+      pinned={note.isPinned}
+      onPin={note.deletedAt ? undefined : () => dispatch(pinNote(note.id))}
+      onMove={button => {
+        const r = button.getBoundingClientRect()
+        openMenu({ x: r.left, y: r.bottom, items: moveMenu(dispatch, store.getState(), note) })
+      }}
+      onDelete={() => requestDelete(dispatch, note)}
+    >
+      {row}
+    </SwipeRow>
+  )
 }
 
 /** Shows the part of the snippet around the first match, like Notes' search results. */
@@ -392,6 +437,7 @@ function GalleryCard({ note, selected, focused, onSelect, onOpen, onContextMenu 
   return (
     <div
       ref={ref}
+      id={optionId(note.id)}
       role="option"
       aria-selected={selected}
       className="cursor-default"

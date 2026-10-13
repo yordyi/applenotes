@@ -30,7 +30,7 @@ test('checklist items toggle when the circle is clicked', async ({ page }) => {
 test('format menu and tables', async ({ page }) => {
   await newNote(page, '格式', '小标题文本')
   await page.getByLabel('格式').click()
-  await page.getByRole('menuitem', { name: /小标题/ }).click()
+  await page.getByRole('menuitemcheckbox', { name: /小标题/ }).click()
   await expect(editor(page).locator('h2')).toHaveText('小标题文本')
 
   await page.getByLabel('表格').click()

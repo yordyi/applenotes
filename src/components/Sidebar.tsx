@@ -2,8 +2,7 @@
 
 import { ChevronRight, Folder as FolderIcon, PanelLeft, PlusCircle, Trash2 } from 'lucide-react'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { moveNoteTo, newFolder, openSelection } from '@/src/store/actions'
-import { renameFolder } from '@/src/store/foldersSlice'
+import { moveNoteTo, newFolder, openSelection, renameFolderTo } from '@/src/store/actions'
 import { useAppDispatch, useAppSelector, useAppStore } from '@/src/store/hooks'
 import {
   selectAllTags,
@@ -105,18 +104,13 @@ export function SidebarContent({ mobile = false }: { mobile?: boolean }) {
             }
             onToggle={() => dispatch(toggleFolderCollapsed(folder.id))}
             onSelect={() => dispatch(openSelection({ kind: 'folder', id: folder.id }))}
-            onContextMenu={e => {
-              e.preventDefault()
-              openMenu({
-                x: e.clientX,
-                y: e.clientY,
-                items: folderMenu(dispatch, store.getState(), folder),
-              })
-            }}
+            onMenu={(x, y) =>
+              openMenu({ x, y, items: folderMenu(dispatch, store.getState(), folder) })
+            }
             onDropNote={id => dispatch(moveNoteTo(id, folder.id))}
             renaming={renamingId === folder.id}
             onRename={name => {
-              dispatch(renameFolder({ id: folder.id, name }))
+              dispatch(renameFolderTo(folder.id, name))
               dispatch(setRenamingFolder(null))
             }}
             onStartRename={
@@ -212,7 +206,8 @@ interface SidebarRowProps {
   disclosure?: 'open' | 'closed'
   onToggle?: () => void
   onSelect: () => void
-  onContextMenu?: (e: React.MouseEvent) => void
+  /** Opens the row's context menu at a point (right-click, or the Menu key). */
+  onMenu?: (x: number, y: number) => void
   onDropNote?: (noteId: string) => void
   renaming?: boolean
   onRename?: (name: string) => void
@@ -226,10 +221,12 @@ function SidebarRow(props: SidebarRowProps) {
   return (
     <div
       role="button"
-      tabIndex={-1}
+      tabIndex={0}
       aria-current={selected || undefined}
+      aria-expanded={disclosure ? disclosure === 'open' : undefined}
+      data-sidebar-row=""
       className={cn(
-        'group flex cursor-default items-center',
+        'group flex cursor-default items-center outline-none focus-visible:ring-2 focus-visible:ring-n-highlight',
         mobile
           ? 'h-11 gap-3 border-b border-n-separator pr-4 last:border-b-0 active:bg-n-hover'
           : 'h-7 gap-1.5 rounded-md pr-2',
@@ -239,7 +236,29 @@ function SidebarRow(props: SidebarRowProps) {
       style={{ paddingLeft: (mobile ? 12 : 4) + depth * (mobile ? 18 : 14) }}
       onClick={props.onSelect}
       onDoubleClick={props.onStartRename}
-      onContextMenu={props.onContextMenu}
+      onContextMenu={e => {
+        if (!props.onMenu) return
+        e.preventDefault()
+        props.onMenu(e.clientX, e.clientY)
+      }}
+      onKeyDown={e => {
+        if (props.renaming) return
+        const r = e.currentTarget.getBoundingClientRect()
+        if (e.key === 'Enter' || e.key === ' ') props.onSelect()
+        else if (e.key === 'ArrowRight' && disclosure === 'closed') props.onToggle?.()
+        else if (e.key === 'ArrowLeft' && disclosure === 'open') props.onToggle?.()
+        else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+          // Move between rows like a list.
+          const rows = Array.from(
+            e.currentTarget.closest('nav')?.querySelectorAll<HTMLElement>('[data-sidebar-row]') ??
+              []
+          )
+          rows[rows.indexOf(e.currentTarget) + (e.key === 'ArrowDown' ? 1 : -1)]?.focus()
+        } else if ((e.key === 'ContextMenu' || (e.shiftKey && e.key === 'F10')) && props.onMenu) {
+          props.onMenu(r.left + 24, r.bottom - 4)
+        } else return
+        e.preventDefault()
+      }}
       onDragOver={e => {
         if (!props.onDropNote || !e.dataTransfer.types.includes(NOTE_DRAG_TYPE)) return
         e.preventDefault()
@@ -253,6 +272,7 @@ function SidebarRow(props: SidebarRowProps) {
       }}
     >
       <span
+        aria-hidden="true"
         className={cn('flex w-3 shrink-0 justify-center text-n-label2', !disclosure && 'invisible')}
         onClick={e => {
           e.stopPropagation()

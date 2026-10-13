@@ -28,6 +28,12 @@ export interface UIState {
   galleryOpen: boolean
   /** Bumped when another tab changes the open note, so the editor reloads it. */
   editorRevision: number
+  /** Local date (YYYY-MM-DD); changes at midnight so 今天 / 昨天 groups are redone. */
+  today: string
+}
+
+export function localDay(d = new Date()): string {
+  return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`
 }
 
 export const initialUIState: UIState = {
@@ -46,6 +52,7 @@ export const initialUIState: UIState = {
   renamingFolderId: null,
   galleryOpen: false,
   editorRevision: 0,
+  today: localDay(),
 }
 
 export const SIDEBAR_WIDTH = { min: 160, max: 360 }
@@ -101,6 +108,9 @@ const uiSlice = createSlice({
     setMobilePane(state, action: PayloadAction<MobilePane>) {
       state.mobilePane = action.payload
     },
+    setToday(state, action: PayloadAction<string>) {
+      state.today = action.payload
+    },
     setRenamingFolder(state, action: PayloadAction<string | null>) {
       state.renamingFolderId = action.payload
     },
@@ -134,5 +144,6 @@ export const {
   setMobilePane,
   setRenamingFolder,
   setGalleryOpen,
+  setToday,
 } = uiSlice.actions
 export default uiSlice.reducer

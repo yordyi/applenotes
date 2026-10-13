@@ -6,9 +6,9 @@ import {
   deleteNote,
   moveNoteTo,
   newFolder,
+  pinNote,
   restoreNote,
 } from '@/src/store/actions'
-import { togglePin } from '@/src/store/notesSlice'
 import { selectFolderTree } from '@/src/store/selectors'
 import type { AppDispatch, RootState } from '@/src/store/store'
 import { setGroupByDate, setRenamingFolder, setSortBy } from '@/src/store/uiSlice'
@@ -54,6 +54,15 @@ function folderTargets(
   }))
 }
 
+/** Folders to move a note to (the iPhone Move swipe action). */
+export function moveMenu(dispatch: AppDispatch, state: RootState, note: Note): MenuItem[] {
+  return folderTargets(
+    state,
+    id => dispatch(moveNoteTo(note.id, id)),
+    note.deletedAt ? undefined : note.folderId
+  )
+}
+
 export function noteMenu(dispatch: AppDispatch, state: RootState, note: Note): MenuItem[] {
   if (note.deletedAt) {
     return [
@@ -66,7 +75,7 @@ export function noteMenu(dispatch: AppDispatch, state: RootState, note: Note): M
   return [
     {
       label: note.isPinned ? '取消置顶备忘录' : '置顶备忘录',
-      onSelect: () => dispatch(togglePin(note.id)),
+      onSelect: () => dispatch(pinNote(note.id)),
     },
     'separator',
     {

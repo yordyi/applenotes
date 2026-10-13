@@ -61,3 +61,63 @@ describe('notes flow', () => {
     expect(store.getState().notes.notes.some(n => n.id === 'wifi')).toBe(false)
   })
 })
+
+describe('undo / redo', () => {
+  it('undoes and redoes deleting a note', async () => {
+    const { undo, redo } = await import('../history')
+    const store = await fresh()
+    store.dispatch(deleteNote('wifi'))
+    expect(store.getState().notes.notes.find(n => n.id === 'wifi')!.deletedAt).not.toBeNull()
+    store.dispatch(undo())
+    expect(store.getState().notes.notes.find(n => n.id === 'wifi')!.deletedAt).toBeNull()
+    expect(store.getState().ui.selectedNoteId).toBe('wifi')
+    store.dispatch(redo())
+    expect(store.getState().notes.notes.find(n => n.id === 'wifi')!.deletedAt).not.toBeNull()
+  })
+
+  it('undoes deleting a folder: folders and their notes come back', async () => {
+    const { undo } = await import('../history')
+    const store = await fresh()
+    const before = store.getState()
+    store.dispatch(deleteFolder('work'))
+    store.dispatch(undo())
+    const after = store.getState()
+    const byId = (fs: { id: string }[]) => [...fs].sort((a, b) => a.id.localeCompare(b.id))
+    expect(byId(after.folders.folders)).toEqual(byId(before.folders.folders))
+    expect(after.notes.notes.filter(n => n.deletedAt)).toHaveLength(0)
+  })
+
+  it('only reverts what the action changed', async () => {
+    const { undo } = await import('../history')
+    const store = await fresh()
+    store.dispatch(deleteNote('wifi'))
+    store.dispatch(editNote({ id: 'books', html: '<h1>之后的编辑</h1>' }))
+    store.dispatch(undo())
+    expect(store.getState().notes.notes.find(n => n.id === 'books')!.title).toBe('之后的编辑')
+  })
+
+  it('a new action clears redo; empty actions are not recorded', async () => {
+    const { undo } = await import('../history')
+    const { renameFolderTo } = await import('../actions')
+    const store = await fresh()
+    store.dispatch(renameFolderTo('work', '工作'))
+    expect(store.getState().history.undo).toHaveLength(0)
+    store.dispatch(deleteNote('wifi'))
+    store.dispatch(undo())
+    expect(store.getState().history.redo).toHaveLength(1)
+    store.dispatch(deleteNote('books'))
+    expect(store.getState().history.redo).toHaveLength(0)
+  })
+})
+
+describe('day change', () => {
+  it('recomputes date groups when the day changes', async () => {
+    const { selectSections } = await import('../selectors')
+    const { setToday } = await import('../uiSlice')
+    const store = await fresh()
+    const first = selectSections(store.getState())
+    expect(selectSections(store.getState())).toBe(first)
+    store.dispatch(setToday('2099-1-1'))
+    expect(selectSections(store.getState())).not.toBe(first)
+  })
+})

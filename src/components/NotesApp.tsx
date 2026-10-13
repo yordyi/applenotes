@@ -12,13 +12,16 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { Provider } from 'react-redux'
 import { toggleList } from '@/src/lib/editorCommands'
 import { newFolder, newNote } from '@/src/store/actions'
+import { redo, undo } from '@/src/store/history'
 import { startApp, type Running } from '@/src/store/boot'
 import { useAppDispatch, useAppSelector, useAppStore } from '@/src/store/hooks'
 import { selectListNotes, selectListTitle, selectSelectedNote } from '@/src/store/selectors'
 import {
   setListWidth,
   setMobilePane,
+  localDay,
   setSidebarWidth,
+  setToday,
   setViewMode,
   toggleSidebar,
 } from '@/src/store/uiSlice'
@@ -71,11 +74,35 @@ export default function NotesApp() {
   return (
     <Provider store={running.store}>
       <Shortcuts />
+      <DayChange />
       <Layout />
       <MenuHost />
       <DialogHost />
     </Provider>
   )
+}
+
+/** Moves 今天 / 昨天 along at midnight, and when a page left open overnight is shown again. */
+function DayChange() {
+  const dispatch = useAppDispatch()
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>
+    const update = () => {
+      dispatch(setToday(localDay()))
+      clearTimeout(timer)
+      const now = new Date()
+      const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
+      timer = setTimeout(update, midnight.getTime() - now.getTime() + 1000)
+    }
+    const onVisible = () => document.visibilityState === 'visible' && update()
+    update()
+    document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      clearTimeout(timer)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
+  }, [dispatch])
+  return null
 }
 
 function Layout() {
@@ -92,7 +119,12 @@ function Shortcuts() {
         e.preventDefault()
         fn()
       }
-      if (e.code === 'KeyN') handle(() => dispatch(e.shiftKey ? newFolder() : newNote()))
+      const target = e.target as HTMLElement | null
+      const typing = Boolean(target?.closest('input, textarea, [contenteditable="true"]'))
+      // In the editor and text fields ⌘Z undoes typing; elsewhere it undoes the last action.
+      if ((e.code === 'KeyZ' || (e.code === 'KeyY' && !e.metaKey)) && !e.altKey && !typing) {
+        handle(() => dispatch(e.code === 'KeyZ' && !e.shiftKey ? undo() : redo()))
+      } else if (e.code === 'KeyN') handle(() => dispatch(e.shiftKey ? newFolder() : newNote()))
       else if (e.code === 'KeyF' && !e.shiftKey) {
         handle(() => {
           const input = document.getElementById(SEARCH_INPUT_ID) as HTMLInputElement | null

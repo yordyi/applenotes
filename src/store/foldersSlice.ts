@@ -1,7 +1,7 @@
-import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
+import { createSlice, isAnyOf, type PayloadAction } from '@reduxjs/toolkit'
 import { newId } from '@/src/lib/note'
 import { DEFAULT_FOLDER_ID, type Folder } from '@/src/lib/types'
-import { applyRemote } from './sync'
+import { applyPatch, applyRemote } from './sync'
 
 export interface FoldersState {
   folders: Folder[]
@@ -59,7 +59,7 @@ const foldersSlice = createSlice({
     },
   },
   extraReducers: builder => {
-    builder.addCase(applyRemote, (state, { payload }) => {
+    builder.addMatcher(isAnyOf(applyRemote, applyPatch), (state, { payload }) => {
       for (const folder of payload.putFolders) {
         const i = state.folders.findIndex(f => f.id === folder.id)
         if (i < 0) state.folders.push(folder)

@@ -1,7 +1,21 @@
 import { NEW_NOTE_HTML } from '@/src/lib/note'
 import { DEFAULT_FOLDER_ID, type Selection } from '@/src/lib/types'
-import { createFolder, folderSubtree, nextFolderName, removeFolder } from './foldersSlice'
-import { createNote, destroyNote, duplicateNote, moveNote, trashNotes } from './notesSlice'
+import {
+  createFolder,
+  folderSubtree,
+  nextFolderName,
+  removeFolder,
+  renameFolder,
+} from './foldersSlice'
+import { undoable } from './history'
+import {
+  createNote,
+  destroyNote,
+  duplicateNote,
+  moveNote,
+  togglePin,
+  trashNotes,
+} from './notesSlice'
 import { selectOrderedIds } from './selectors'
 import type { AppThunk } from './store'
 import {
@@ -53,6 +67,13 @@ export const newNote = (): AppThunk => (dispatch, getState) => {
 export const deleteNote =
   (id: string): AppThunk =>
   (dispatch, getState) => {
+    const note = getState().notes.notes.find(n => n.id === id)
+    if (note) dispatch(undoable('删除备忘录', removeNote(id)))
+  }
+
+const removeNote =
+  (id: string): AppThunk =>
+  (dispatch, getState) => {
     const state = getState()
     const note = state.notes.notes.find(n => n.id === id)
     if (!note) return
@@ -65,44 +86,49 @@ export const deleteNote =
     dispatch(ensureSelectedNote())
   }
 
-export const restoreNote =
-  (id: string): AppThunk =>
-  (dispatch, getState) => {
+export const restoreNote = (id: string): AppThunk =>
+  undoable('恢复备忘录', (dispatch, getState) => {
     const state = getState()
     const note = state.notes.notes.find(n => n.id === id)
     if (!note) return
     const folderExists = state.folders.folders.some(f => f.id === note.folderId)
     dispatch(moveNote({ id, folderId: folderExists ? note.folderId : DEFAULT_FOLDER_ID }))
     dispatch(ensureSelectedNote())
-  }
+  })
 
-export const moveNoteTo =
-  (id: string, folderId: string): AppThunk =>
-  dispatch => {
+export const moveNoteTo = (id: string, folderId: string): AppThunk =>
+  undoable('移动备忘录', dispatch => {
     dispatch(moveNote({ id, folderId }))
     dispatch(ensureSelectedNote())
-  }
+  })
 
-export const copyNote =
-  (id: string): AppThunk =>
-  dispatch => {
+export const copyNote = (id: string): AppThunk =>
+  undoable('复制备忘录', dispatch => {
     const action = dispatch(duplicateNote(id))
     dispatch(selectNote(action.payload.copyId))
-  }
+  })
 
-export const newFolder =
-  (parentId: string | null = null): AppThunk =>
-  (dispatch, getState) => {
+export const pinNote = (id: string): AppThunk =>
+  undoable('置顶备忘录', dispatch => {
+    dispatch(togglePin(id))
+  })
+
+export const newFolder = (parentId: string | null = null): AppThunk =>
+  undoable('新建文件夹', (dispatch, getState) => {
     const name = nextFolderName(getState().folders.folders)
     const action = dispatch(createFolder({ name, parentId }))
     dispatch(openSelection({ kind: 'folder', id: action.payload.id }))
     dispatch(setRenamingFolder(action.payload.id))
-  }
+  })
+
+export const renameFolderTo = (id: string, name: string): AppThunk =>
+  undoable('重新命名文件夹', dispatch => {
+    dispatch(renameFolder({ id, name }))
+  })
 
 /** Deletes a folder and its subfolders; their notes go to Recently Deleted. */
-export const deleteFolder =
-  (id: string): AppThunk =>
-  (dispatch, getState) => {
+export const deleteFolder = (id: string): AppThunk =>
+  undoable('删除文件夹', (dispatch, getState) => {
     if (id === DEFAULT_FOLDER_ID) return
     const state = getState()
     const ids = new Set(folderSubtree(state.folders.folders, id))
@@ -116,7 +142,7 @@ export const deleteFolder =
       dispatch(select({ kind: 'folder', id: DEFAULT_FOLDER_ID }))
     }
     dispatch(ensureSelectedNote())
-  }
+  })
 
 /** Moves the note selection up or down the list. */
 export const stepSelection =
