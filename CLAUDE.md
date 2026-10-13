@@ -4,87 +4,38 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is an Apple Notes clone web application built with Next.js 14.1.0 and Redux Toolkit. The app mimics Apple Notes' interface and functionality, featuring note creation/editing, folder organization, search, and pinning capabilities.
+A browser clone of Apple Notes (macOS Sonoma/Sequoia; iOS layout below 768px wide), built with Next.js 14.1, Redux Toolkit and Tailwind. The UI is in Chinese. The plan is in `docs/PLAN.md`.
 
-## Essential Commands
+## Commands
 
 ```bash
-npm run dev    # Start development server on http://localhost:3000
-npm run build  # Build for production
-npm run start  # Start production server
-npm run lint   # Run ESLint
+npm run dev        # http://localhost:3000
+npm test           # vitest unit tests (src/**/__tests__)
+npm run typecheck
+npm run lint
+npm run build
 ```
 
 ## Architecture
 
-### State Management
-The application uses Redux Toolkit with three main slices:
+All app code lives in `src/`. `app/page.tsx` loads `src/components/NotesApp.tsx` with `ssr: false`, because state comes from localStorage.
 
-1. **notesSlice** (`store/slices/notesSlice.ts`): Manages all note operations
-   - State: `notes[]`, `selectedNoteId`, `searchQuery`
-   - Actions: `addNote`, `updateNote`, `deleteNote`, `selectNote`, `setSearchQuery`, `togglePinNote`
+- `src/lib/` — pure logic, no React:
+  - `types.ts` — `Note`, `Folder`, `Selection`, UI enums
+  - `note.ts` — derives `title` / `snippet` / `tags` from note HTML (first line = title)
+  - `dates.ts` — list date formatting and date-group sections
+  - `editorCommands.ts` — contentEditable formatting commands (execCommand + DOM edits)
+  - `seed.ts` — sample data for first launch
+- `src/store/` — Redux Toolkit:
+  - `notesSlice` (notes; deletion sets `deletedAt` = Recently Deleted), `foldersSlice`, `uiSlice` (selection, search, view, widths, focus, mobile pane)
+  - `actions.ts` — thunks that coordinate slices (new note, delete with neighbor selection, delete folder, restore)
+  - `selectors.ts` — memoized selectors (visible notes, sections, folder tree, counts, tags)
+  - `persistence.ts` — load/save to localStorage (`applenotes:v2`), throttled
+- `src/components/` — `NotesApp` (provider, layouts, shortcuts), `Sidebar`, `NoteList`, `Editor`, `Menu` (context/drop-down menus), `Dialog` (alerts, toasts), `menus.ts` (menu item builders)
 
-2. **foldersSlice** (`store/slices/foldersSlice.ts`): Manages folder hierarchy
-   - State: `folders[]`, `selectedFolderId`
-   - Actions: `addFolder`, `updateFolder`, `deleteFolder`, `selectFolder`
+## Conventions
 
-3. **uiSlice** (`store/slices/uiSlice.ts`): Controls UI preferences
-   - State: `sidebarCollapsed`, `view` (grid/list), `sortBy`, `showPinnedOnly`
-   - Actions: `toggleSidebar`, `setView`, `setSortBy`, `toggleShowPinnedOnly`
-
-### Component Architecture
-All components use client-side rendering (`'use client'`). The main layout consists of:
-
-- **Sidebar** → **NotesList** → **NoteEditor** (when note selected)
-- **Toolbar** provides view controls above NotesList
-
-Data flow: Redux store → typed hooks (`useAppSelector`/`useAppDispatch`) → Components
-
-### Key Design Patterns
-1. **Typed Redux Hooks**: Custom hooks in `store/hooks.ts` provide TypeScript integration
-2. **Optimistic Updates**: Note changes update immediately in state before any persistence
-3. **Controlled Components**: All form inputs are controlled via Redux state
-4. **Responsive Layout**: Sidebar is fixed width (w-72), NotesList adapts, NoteEditor appears when note selected
-
-## Development Notes
-
-### Adding New Features
-- New Redux state goes in appropriate slice or create new slice in `store/slices/`
-- Update `store/store.ts` to include new reducers
-- Components should use `useAppSelector` and `useAppDispatch` hooks
-- Follow existing component patterns (client-side, typed props, Redux integration)
-
-### Styling Guidelines
-- Use Tailwind classes with custom Apple-themed colors defined in `tailwind.config.js`
-- Apple gray scale: `apple-gray-{50-900}`
-- Apple yellow accent: `apple-yellow`
-- Dark mode supported via Tailwind's `dark:` prefix
-
-### Data Models
-```typescript
-Note: {
-  id: string
-  title: string
-  content: string
-  folderId: string | null
-  createdAt: string
-  updatedAt: string
-  isPinned: boolean
-  tags: string[]
-}
-
-Folder: {
-  id: string
-  name: string
-  icon?: string
-  parentId: string | null
-  createdAt: string
-}
-```
-
-### Chinese Localization
-The UI uses Chinese text for labels. Key terms:
-- 备忘录 (Notes)
-- 搜索 (Search)
-- 置顶备忘录 (Pinned Notes)
-- 新建备忘录 (New Note)
+- Note HTML is the source of truth; never store title separately from what `deriveFields` produces.
+- Colors are CSS variables in `app/globals.css` (light/dark via `prefers-color-scheme`), exposed to Tailwind as `n-*` (e.g. `bg-n-sidebar`, `text-n-label2`). Don't hardcode grays.
+- Typed hooks: `useAppDispatch`, `useAppSelector`, `useAppStore` from `src/store/hooks.ts`.
+- Import with the `@/src/...` alias.

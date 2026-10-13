@@ -1,157 +1,49 @@
-# Apple Notes Clone
+# 备忘录（Apple Notes 复刻）
 
-一个基于 Next.js 14 和 Redux Toolkit 构建的 Apple Notes 克隆应用，完美复刻了 Apple Notes 的界面和功能。
+在浏览器中复刻 macOS Sonoma / Sequoia 的「备忘录」，窄屏下切换为 iOS 版布局。基于 Next.js 14、Redux Toolkit 和 Tailwind CSS。
 
-## 功能特性
+## 功能
 
-- 📝 **笔记管理**：创建、编辑、删除笔记
-- 📁 **文件夹组织**：创建文件夹层次结构来组织笔记
-- 🔍 **搜索功能**：快速搜索笔记内容
-- 📌 **置顶功能**：重要笔记可置顶显示
-- 🏷️ **标签系统**：为笔记添加标签进行分类
-- 🌓 **深色模式**：支持深色/浅色主题切换
-- 📱 **响应式设计**：适配各种屏幕尺寸
+- 三栏布局：边栏（文件夹、子文件夹、最近删除、标签）、备忘录列表、编辑器；分隔线可拖动调整宽度
+- 首行即标题的富文本编辑：标题 / 小标题 / 副标题 / 正文 / 等宽字体、项目符号 / 短划线 / 编号列表、块引用、粗体 / 斜体 / 下划线 / 删除线
+- 核对清单、表格（Tab 在单元格间移动）、插入图片（自动压缩）
+- 按日期分组（置顶、今天、昨天、过去 7 天、过去 30 天、月份、年份），可按编辑日期、创建日期或标题排序
+- 列表视图与画廊视图
+- 右键菜单：置顶、移到文件夹、复制、删除；文件夹的新建、重新命名、删除；拖放备忘录到文件夹
+- 最近删除：保留 30 天，可恢复或永久删除
+- 正文中的 `#标签` 自动识别，可在边栏按标签筛选
+- 全局搜索，高亮匹配内容
+- 深色模式跟随系统
+- 数据保存在浏览器 localStorage
 
-## 技术栈
+## 快捷键
 
-- **前端框架**：Next.js 14.1.0
-- **状态管理**：Redux Toolkit
-- **UI 组件**：React 18 + Lucide React Icons
-- **样式**：Tailwind CSS + 自定义 Apple 风格主题
-- **类型检查**：TypeScript
-- **日期处理**：date-fns
-- **开发工具**：ESLint, Prettier
+| 快捷键                      | 功能                                     |
+| --------------------------- | ---------------------------------------- |
+| ⌘N / ⇧⌘N                    | 新建备忘录 / 新建文件夹                  |
+| ⌘F                          | 搜索                                     |
+| ⌥⌘S                         | 显示或隐藏边栏                           |
+| ⌘1 / ⌘2                     | 列表 / 画廊                              |
+| ⇧⌘T / ⇧⌘H / ⇧⌘J / ⇧⌘B / ⇧⌘M | 标题 / 小标题 / 副标题 / 正文 / 等宽字体 |
+| ⇧⌘L / ⇧⌘U                   | 核对清单 / 勾选当前项                    |
+| ⌘B / ⌘I / ⌘U                | 粗体 / 斜体 / 下划线                     |
+| ↑ ↓ / ⌫                     | 在列表中切换 / 删除备忘录                |
 
-## 快速开始
+Windows 和 Linux 上用 Ctrl 代替 ⌘。部分组合（如 ⌘N、⇧⌘T）被浏览器保留，无法拦截，可改用工具栏按钮或 Aa 菜单。
 
-### 环境要求
-
-- Node.js 16.x 或更高版本
-- npm 或 yarn
-
-### 安装依赖
+## 开发
 
 ```bash
 npm install
-```
-
-### 开发模式
-
-```bash
-npm run dev
-```
-
-访问 [http://localhost:3000](http://localhost:3000) 查看应用。
-
-### 构建生产版本
-
-```bash
+npm run dev        # http://localhost:3000
+npm test           # 单元测试（vitest）
+npm run typecheck
+npm run lint
 npm run build
-npm run start
 ```
 
-## 可用脚本
+## 不在范围内
 
-- `npm run dev` - 启动开发服务器
-- `npm run build` - 构建生产版本
-- `npm run start` - 启动生产服务器
-- `npm run lint` - 运行 ESLint 检查
-- `npm run typecheck` - 运行 TypeScript 类型检查
-- `npm run format` - 格式化代码
-- `npm run validate` - 运行所有检查（lint + typecheck + format）
-- `npm run analyze` - 分析构建包大小
+锁定备忘录、协作共享、iCloud 同步、扫描文稿、手绘、智能文件夹等依赖 Apple 账户或系统能力的功能。
 
-## 项目结构
-
-```
-applenotes/
-├── src/
-│   ├── app/                 # Next.js 14 App Router
-│   ├── components/          # React 组件
-│   │   ├── Sidebar/        # 侧边栏组件
-│   │   ├── NotesList/      # 笔记列表组件
-│   │   ├── NoteEditor/     # 笔记编辑器组件
-│   │   └── Toolbar/        # 工具栏组件
-│   ├── store/              # Redux store 配置
-│   │   ├── slices/         # Redux slices
-│   │   └── hooks.ts        # 类型化的 Redux hooks
-│   └── types/              # TypeScript 类型定义
-├── public/                 # 静态资源
-└── CLAUDE.md              # 项目开发指南
-```
-
-## 状态管理
-
-应用使用 Redux Toolkit 管理状态，包含三个主要 slice：
-
-- **notesSlice**：管理笔记的 CRUD 操作
-- **foldersSlice**：管理文件夹层次结构
-- **uiSlice**：控制 UI 偏好设置
-
-## 数据模型
-
-### Note 笔记模型
-```typescript
-{
-  id: string
-  title: string
-  content: string
-  folderId: string | null
-  createdAt: string
-  updatedAt: string
-  isPinned: boolean
-  tags: string[]
-}
-```
-
-### Folder 文件夹模型
-```typescript
-{
-  id: string
-  name: string
-  icon?: string
-  parentId: string | null
-  createdAt: string
-}
-```
-
-## 开发指南
-
-### 添加新功能
-
-1. 在相应的 slice 中添加新的 Redux 状态
-2. 更新 `store/store.ts` 包含新的 reducer
-3. 使用 `useAppSelector` 和 `useAppDispatch` hooks
-4. 遵循现有的组件模式（客户端渲染、类型化 props、Redux 集成）
-
-### 样式指南
-
-- 使用 Tailwind CSS 类
-- 自定义 Apple 主题色彩定义在 `tailwind.config.js`
-- 支持深色模式通过 `dark:` 前缀
-
-## 部署
-
-项目可以部署到任何支持 Next.js 的平台：
-
-- [Vercel](https://vercel.com/new)
-- [Netlify](https://www.netlify.com/)
-- [Railway](https://railway.app/)
-
-## 贡献
-
-1. Fork 本仓库
-2. 创建特性分支 (`git checkout -b feature/amazing-feature`)
-3. 提交更改 (`git commit -m '添加一些新功能'`)
-4. 推送到分支 (`git push origin feature/amazing-feature`)
-5. 开启 Pull Request
-
-## 许可证
-
-本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情。
-
-## 致谢
-
-- 感谢 Apple Inc. 提供的设计灵感
-- 感谢 Next.js 和 Redux 团队的优秀工具
-- 感谢所有贡献者的支持
+详细规划见 [docs/PLAN.md](docs/PLAN.md)。
